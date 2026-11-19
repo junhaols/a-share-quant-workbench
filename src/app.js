@@ -77,6 +77,42 @@ function escapeHtml(str) {
   }[s]));
 }
 
+// 轻量提示条：替代浏览器原生 alert，并给操作成功一个可见反馈
+function toast(message, type = "info") {
+  const region = document.getElementById("toast-region");
+  if (!region) return;
+  const el = document.createElement("div");
+  el.className = `toast toast-${type}`;
+  el.textContent = message;
+  region.appendChild(el);
+  setTimeout(() => {
+    el.classList.add("is-leaving");
+    setTimeout(() => el.remove(), 250);
+  }, type === "error" ? 4200 : 2400);
+}
+
+// 页内二次确认：第一次点击变成“再点一次确认”，3 秒内再点才执行
+function confirmByDoubleClick(btn, label, action) {
+  if (btn.dataset.armed === "1") {
+    btn.dataset.armed = "";
+    btn.textContent = btn.dataset.label;
+    btn.classList.remove("is-armed");
+    action();
+    return;
+  }
+  btn.dataset.label = btn.textContent;
+  btn.dataset.armed = "1";
+  btn.textContent = label;
+  btn.classList.add("is-armed");
+  setTimeout(() => {
+    if (btn.dataset.armed === "1") {
+      btn.dataset.armed = "";
+      btn.textContent = btn.dataset.label;
+      btn.classList.remove("is-armed");
+    }
+  }, 3000);
+}
+
 function fmtMoney(val, currency, decimals = 0) {
   const abs = Math.abs(val).toLocaleString(undefined, {
     minimumFractionDigits: decimals,
@@ -231,12 +267,78 @@ function switchTab(targetTab) {
     p.classList.toggle("hidden", p.id !== `tab-${targetTab}`)
   );
   if (targetTab === "sandbox") setTimeout(redrawCharts, 20);
+  if (location.hash.slice(1) !== targetTab) {
+    try { history.replaceState(null, "", `#${targetTab}`); } catch (_) {}
+  }
 }
 
 // =========================================================================
 // TAB 1: OVERVIEW
 // =========================================================================
+function renderRiskReturnBars(rows) {
+  const maxC = Math.max(1, ...rows.map(([, m]) => Math.abs(m.cagr_pct || 0)));
+  const maxD = Math.max(1, ...rows.map(([, m]) => Math.abs(m.max_drawdown_pct || 0)));
+  return `
+    <div class="rr-bars">
+      <div class="rr-head"><span>收益与回撤对比</span><span class="legend-row"><span><span class="dot" style="background:var(--up)"></span>年化收益</span><span><span class="dot" style="background:var(--down)"></span>最大回撤</span></span></div>
+      ${rows
+        .map(([name, m]) => {
+          const c = m.cagr_pct || 0;
+          const d = Math.abs(m.max_drawdown_pct || 0);
+          const ratio = d > 0 ? (c / d).toFixed(2) : "-";
+          return `
+          <div class="rr-row">
+            <div class="rr-name" title="${escapeHtml(name)}">${escapeHtml(name.replace(/^S\d_/, ""))}</div>
+            <div class="rr-track"><div class="rr-fill" style="width:${(Math.abs(c) / maxC) * 100}%; background:${c >= 0 ? "var(--up)" : "var(--down)"};"></div></div>
+            <div class="rr-track"><div class="rr-fill" style="width:${(d / maxD) * 100}%; background:var(--down); opacity:.75;"></div></div>
+            <div class="rr-ratio font-mono tabular-nums" title="年化收益 ÷ 最大回撤（Calmar 近似）">${ratio}</div>
+          </div>`;
+        })
+        .join("")}
+      <p class="text-xs text-muted">右侧数字为年化收益 ÷ 最大回撤（近似 Calmar 比率），越高说明每承受 1% 回撤换来的收益越多。</p>
+    </div>`;
+}
+
+function renderOverviewToday() {
+  const el = document.getElementById("overview-today");
+  if (!el) return;
+  const cfg = getActiveCfg();
+  const brief = dailySnapshotData?.ai_brief;
+  const snap = dailySnapshotData?.markets?.[state.activeMarket];
+  if (!brief || !snap) {
+    el.innerHTML = `<div class="today-empty text-xs text-muted">正在读取今日盘后数据…</div>`;
+    return;
+  }
+  const sc = Math.max(-2, Math.min(2, Number(brief.sentiment_score || 0)));
+  const labels = { "-2": "极度谨慎", "-1": "偏谨慎", "0": "中性观望", "1": "偏积极", "2": "强势偏多" };
+  const scColor = sc > 0 ? "var(--up)" : sc < 0 ? "var(--down)" : "var(--muted)";
+  const etfs = [...(snap.etfs || [])].sort((a, b) => b.ret_1d_pct - a.ret_1d_pct);
+  const pct = (v) => `<span style="color:${v > 0 ? "var(--up)" : v < 0 ? "var(--down)" : "var(--muted)"}">${v > 0 ? "+" : ""}${Number(v).toFixed(2)}%</span>`;
+  const plan = (snap.momentum_signal?.target_plan || []).map((p) => `${escapeHtml(p.name)} ${p.weight_pct}%`).join(" + ");
+  el.innerHTML = `
+    <div class="today-main">
+      <div class="today-meta">
+        <span class="eyebrow">今日盘后速览 · ${escapeHtml(snap.as_of_date || "")}</span>
+        <span class="badge">${escapeHtml(brief.regime || "中性观察")}</span>
+        <span class="sentiment-pill" style="color:${scColor}">${sc > 0 ? "+" : ""}${sc} ${labels[String(sc)]}</span>
+      </div>
+      <h2 class="today-headline">${escapeHtml(brief.headline || brief.summary || "")}</h2>
+      ${plan ? `<p class="text-xs text-muted">${escapeHtml(cfg.shortName)}参考信号：<span class="font-semibold" style="color:var(--fg)">${plan}</span>（模拟观察，非投资建议）</p>` : ""}
+      <div class="actions-row"><button type="button" class="btn btn-secondary" data-goto-tab="daily">查看完整简报 →</button></div>
+    </div>
+    <div class="today-movers">
+      <div class="text-xs text-muted" style="margin-bottom:6px;">${escapeHtml(cfg.shortName)} ETF 当日涨跌</div>
+      ${etfs
+        .map(
+          (e) => `<div class="mover-row"><span class="font-mono text-muted">${escapeHtml(e.code)}</span><span class="mover-name">${escapeHtml(e.name)}</span><span class="font-mono tabular-nums mover-val">${pct(e.ret_1d_pct)}</span></div>`
+        )
+        .join("")}
+    </div>`;
+  el.querySelector("[data-goto-tab]")?.addEventListener("click", () => switchTab("daily"));
+}
+
 function renderOverview() {
+  renderOverviewToday();
   const cardsEl = document.getElementById("overview-market-cards");
   cardsEl.innerHTML = MARKET_ORDER.map((id) => {
     const cfg = MARKETS[id];
@@ -325,7 +427,8 @@ function renderOverview() {
               .join("")}
           </tbody>
         </table>
-      </div>`;
+      </div>
+      ${renderRiskReturnBars(rows)}`;
   } else {
     metaEl.textContent = `${cfg.shortName}尚未导入 Colab 真实回测 JSON，当前沙盒使用多周期教学演示行情`;
     bodyEl.innerHTML = `
@@ -619,6 +722,7 @@ async function loadDailySnapshots() {
   } catch (_) {}
   renderDailyTab();
   renderLlmPipelineStatus();
+  renderOverviewToday();
 }
 
 // =========================================================================
@@ -1578,6 +1682,7 @@ function bindEvents() {
       }, 1800);
     } catch (_) {
       downloadText(`quant_brief_${snapMarket?.as_of_date || "latest"}.md`, md, "text/markdown");
+      toast("浏览器不允许写剪贴板，已改为下载 Markdown 文件");
     }
   });
 
@@ -1598,6 +1703,7 @@ function bindEvents() {
     saveState();
     renderNotes();
     renderOverview();
+    toast("已存入学习笔记", "success");
     e.target.textContent = "已存入笔记 ✓";
     setTimeout(() => {
       e.target.textContent = "存入学习笔记";
@@ -1628,8 +1734,9 @@ function bindEvents() {
         renderColabReport();
         renderOverview();
         switchTab("sandbox");
+        toast(`已导入 ${getActiveCfg().label} 的 Colab 回测报告`, "success");
       } catch (err) {
-        alert("导入失败：请选择 Colab 生成的回测摘要 JSON (" + err.message + ")");
+        toast("导入失败：请选择 Colab 生成的回测摘要 JSON（" + err.message + "）", "error");
       }
     };
     reader.readAsText(file);
@@ -1646,6 +1753,7 @@ function bindEvents() {
   document.getElementById("btn-export-workspace").addEventListener("click", () => {
     const stamp = new Date().toISOString().slice(0, 10);
     downloadText(`quantlab_multi_market_backup_${stamp}.json`, JSON.stringify(state, null, 2));
+    toast("已导出备份文件，可存到 Google Drive", "success");
   });
 
   document.getElementById("import-workspace-json").addEventListener("change", (e) => {
@@ -1656,12 +1764,13 @@ function bindEvents() {
       try {
         const parsed = JSON.parse(String(reader.result));
         if (!parsed.markets || !Array.isArray(parsed.roadmap)) throw new Error("备份文件格式不正确");
-        state = parsed;
+        state = migrateState(parsed);
         saveState();
         syncControlsToMarket();
         renderAll();
+        toast("已从备份恢复工作区", "success");
       } catch (err) {
-        alert("恢复备份失败：" + err.message);
+        toast("恢复备份失败：" + err.message, "error");
       }
     };
     reader.readAsText(file);
@@ -1729,13 +1838,19 @@ function bindEvents() {
     renderOverview();
   });
 
-  document.getElementById("btn-clear-trades").addEventListener("click", () => {
+  document.getElementById("btn-clear-trades").addEventListener("click", (e) => {
     const cfg = getActiveCfg();
-    if (!confirm(`确认清空「${cfg.label}」的全部模拟交易记录？`)) return;
-    getActiveMarketState().trades = [];
-    saveState();
-    renderJournal();
-    renderOverview();
+    if (!getActiveMarketState().trades.length) {
+      toast(`${cfg.label} 暂无模拟交易记录`);
+      return;
+    }
+    confirmByDoubleClick(e.currentTarget, "再点一次确认清空", () => {
+      getActiveMarketState().trades = [];
+      saveState();
+      renderJournal();
+      renderOverview();
+      toast(`已清空 ${cfg.label} 的模拟交易记录`, "success");
+    });
   });
 
   document.getElementById("btn-export-trades-csv").addEventListener("click", () => {
@@ -1746,6 +1861,7 @@ function bindEvents() {
       (t) => `${cfg.id},${t.date},${t.code},${t.name},${t.side},${t.price},${t.qty},${t.commission},"${String(t.note || "").replace(/"/g, '""')}"`
     );
     downloadText(`paper_trades_${cfg.id}.csv`, "\uFEFF" + [header, ...rows].join("\n"), "text/csv");
+    toast(`已导出 ${rows.length} 条交易记录`, "success");
   });
 
   document.getElementById("etf-search").addEventListener("input", renderEtfs);
@@ -1760,7 +1876,7 @@ function bindEvents() {
     const role = document.getElementById("etf-role").value.trim();
     if (!code || !name) return;
     if (ms.etfs.some((x) => x.code === code)) {
-      alert("该代码已在当前市场档案库中");
+      toast(`${code} 已在当前市场档案库中`, "error");
       return;
     }
     ms.etfs.push({ code, name, cat, t0, lotHint: `${cfg.lotSize}股起`, role });
@@ -1810,7 +1926,14 @@ initTheme();
 syncControlsToMarket();
 bindEvents();
 aiApi = initAiAssistant({ getContextSnapshot });
+const TAB_IDS = Array.from(document.querySelectorAll(".tab-btn")).map((b) => b.dataset.tab);
+function syncTabFromHash() {
+  const t = location.hash.slice(1);
+  if (TAB_IDS.includes(t)) switchTab(t);
+}
+window.addEventListener("hashchange", syncTabFromHash);
 bindLlmEvents();
 renderAll();
+syncTabFromHash();
 loadDailySnapshots();
 MARKET_ORDER.forEach((id) => ensureMarketDataLoaded(id));
