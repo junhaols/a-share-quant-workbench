@@ -74,13 +74,13 @@
 
       <!-- Primary Tabs -->
       <nav class="tabs-nav" role="tablist" aria-label="工作台模块">
-          <button class="tab-btn" role="tab" id="tabbtn-overview" aria-controls="tab-overview" aria-selected="true" tabindex="0" data-tab="overview" title="1. 多市场总览"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>总览</span></button>
-          <button class="tab-btn" role="tab" id="tabbtn-daily" aria-controls="tab-daily" aria-selected="false" tabindex="-1" data-tab="daily" title="2. 每日行情与 AI 简报"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg><span>每日行情与 AI 简报</span></button>
-          <button class="tab-btn" role="tab" id="tabbtn-sandbox" aria-controls="tab-sandbox" aria-selected="false" tabindex="-1" data-tab="sandbox" title="3. 回测与 Walk-Forward 实验室"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6"/><path d="M10 3v6.5L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9.5V3"/><path d="M7 15h10"/></svg><span>回测 · Walk-Forward</span></button>
-          <button class="tab-btn" role="tab" id="tabbtn-llm" aria-controls="tab-llm" aria-selected="false" tabindex="-1" data-tab="llm" title="大模型量化：应用分层、本站链路、评测协议与提示词实验室"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg><span>大模型量化</span></button>
-          <button class="tab-btn" role="tab" id="tabbtn-learn" aria-controls="tab-learn" aria-selected="false" tabindex="-1" data-tab="learn" title="4. 成长路线与知识笔记"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h7a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h8z"/></svg><span>成长路线与笔记</span></button>
-          <button class="tab-btn" role="tab" id="tabbtn-journal" aria-controls="tab-journal" aria-selected="false" tabindex="-1" data-tab="journal" title="5. 多市场模拟盘日志"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><span>模拟盘日志</span></button>
-          <button class="tab-btn" role="tab" id="tabbtn-resources" aria-controls="tab-resources" aria-selected="false" tabindex="-1" data-tab="resources" title="6. 标的档案与开源生态"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg><span>标的与开源生态</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-overview" aria-controls="tab-overview" aria-selected="true" tabindex="0" data-tab="overview" title="实时行情、今日盘后速览与各市场概况（真实数据）"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>行情总览</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-daily" aria-controls="tab-daily" aria-selected="false" tabindex="-1" data-tab="daily" title="每日收盘后的 ETF 行情与 AI 投研简报（真实收盘数据）"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg><span>盘后简报</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-sandbox" aria-controls="tab-sandbox" aria-selected="false" tabindex="-1" data-tab="sandbox" title="交互回测与 Walk-Forward 验证（工具）"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6"/><path d="M10 3v6.5L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9.5V3"/><path d="M7 15h10"/></svg><span>回测实验室</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-journal" aria-controls="tab-journal" aria-selected="false" tabindex="-1" data-tab="journal" title="多市场模拟交易与持仓盈亏（模拟，非真实账户）"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><span>模拟盘</span></button>
+          <span class="tabs-sep" aria-hidden="true"></span>
+          <button class="tab-btn" role="tab" id="tabbtn-learn" aria-controls="tab-learn" aria-selected="false" tabindex="-1" data-tab="learn" title="全部教程：成长路线、概念、规则、大模型量化、笔记"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h7a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h8z"/></svg><span>学习中心</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-resources" aria-controls="tab-resources" aria-selected="false" tabindex="-1" data-tab="resources" title="标的档案库与开源项目收藏"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg><span>标的与资料</span></button>
       </nav>
     </div>
   </div>
@@ -89,75 +89,45 @@
     <main id="main">
       <!-- ==================== TAB 1: MULTI-MARKET OVERVIEW ==================== -->
       <section id="tab-overview" role="tabpanel" aria-labelledby="tabbtn-overview" class="tab-panel stack-md">
+        <div id="live-card" class="card stack-md">
+          <div class="section-head">
+            <div>
+              <div class="title-row"><h2>实时行情</h2><span class="prov prov-live">实时 · 腾讯财经</span><span id="live-status" class="text-xs text-muted"></span></div>
+              <p class="text-xs text-muted">交易时段每 15 秒自动刷新，休市时显示最近一笔成交；行情可能有数秒到数分钟延迟，仅供学习参考</p>
+            </div>
+            <div class="actions-row">
+              <span id="live-updated" class="text-xs text-muted font-mono"></span>
+              <button id="btn-live-toggle" type="button" class="btn">暂停自动刷新</button>
+              <button id="btn-live-refresh" type="button" class="btn btn-secondary">立即刷新</button>
+            </div>
+          </div>
+          <div id="live-indices" class="live-indices"></div>
+          <div class="stack-sm">
+            <div class="flex-between">
+              <h3 id="live-watch-title">自选 ETF 实时报价</h3>
+              <span id="live-session" class="text-xs text-muted"></span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>代码 / 名称</th>
+                    <th class="text-right">最新价</th>
+                    <th class="text-right">涨跌</th>
+                    <th class="text-right">涨跌幅</th>
+                    <th class="text-right">日内区间</th>
+                    <th class="text-right">昨收</th>
+                    <th class="text-right">更新时间</th>
+                  </tr>
+                </thead>
+                <tbody id="live-watch-tbody" class="tabular-nums"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div id="overview-today" class="card today-card"></div>
         <div id="overview-market-cards" class="grid-3"></div>
-
-        <div class="grid-split-2-1">
-          <div class="card stack-sm">
-            <div class="flex-between">
-              <div>
-                <h2 id="overview-colab-title">当前市场 Colab 真实回测快照</h2>
-                <p id="overview-colab-meta" class="text-xs text-muted" style="margin-top:2px;"></p>
-              </div>
-              <div class="actions-row">
-                <button id="btn-goto-daily" type="button" class="btn btn-secondary">查看今日行情与简报</button>
-                <button id="btn-goto-sandbox" type="button" class="btn btn-primary">进入回测与验证实验室</button>
-              </div>
-            </div>
-            <div id="overview-colab-body"></div>
-          </div>
-
-          <div class="card stack-sm">
-            <h3>云端算力与个人学习状态</h3>
-            <div class="subcard stack-sm text-xs">
-              <div class="flex-between">
-                <span class="font-semibold">Colab Pro+ GPU 工作台</span>
-                <span class="badge badge-live">已联调通过</span>
-              </div>
-              <p class="text-muted">实测节点：NVIDIA L4 (23 GB VRAM · 53 GB RAM · CUDA 13.0)，任务队列与结果回传 Drive 链路畅通。</p>
-            </div>
-            <div class="subcard stack-sm text-xs">
-              <div class="flex-between">
-                <span class="font-semibold">整体学习进度</span>
-                <span id="overview-learn-pct" class="font-mono font-semibold tabular-nums">0%</span>
-              </div>
-              <div class="progress-track">
-                <div id="overview-learn-bar" class="progress-fill" style="width:0%;"></div>
-              </div>
-              <p class="text-muted" id="overview-notes-count"></p>
-            </div>
-            <div class="subcard stack-sm text-xs">
-              <div class="flex-between">
-                <span class="font-semibold">模拟盘记录概览</span>
-                <button id="btn-goto-journal" type="button" class="btn-link">打开日志 →</button>
-              </div>
-              <p class="text-muted" id="overview-journal-summary"></p>
-            </div>
-          </div>
-        </div>
-
-        <div class="card stack-sm">
-          <div class="flex-between">
-            <h3>跨市场量化规则对照表（入门必备）</h3>
-            <span class="text-xs text-muted">切换顶部市场后，沙盒手数、货币、佣金模型与标的池会自动适配对应规则</span>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>市场</th>
-                  <th>计价货币</th>
-                  <th>最小单位</th>
-                  <th>交易与涨跌停规则</th>
-                  <th>税费特点</th>
-                  <th>免费 / 进阶数据源</th>
-                  <th>常见交易通道</th>
-                </tr>
-              </thead>
-              <tbody id="overview-rules-tbody"></tbody>
-            </table>
-          </div>
-        </div>
       </section>
 
       <!-- ==================== TAB 2: DAILY MARKET & AI BRIEF ==================== -->
@@ -166,7 +136,7 @@
         <div class="card stack-md">
           <div class="flex-between">
             <div>
-              <h2>盘后 AI 投研与风控简报</h2>
+              <div class="title-row"><h2>盘后 AI 投研与风控简报</h2><span id="daily-brief-prov" class="prov prov-real">真实收盘 · AI 生成</span></div>
               <p id="daily-brief-meta" class="text-xs text-muted" style="margin-top:2px;">每日 A股/美股收盘后由 GitHub Actions 自动刷新</p>
             </div>
             <div class="actions-row">
@@ -210,6 +180,15 @@
             </div>
           </div>
 
+          <div class="subcard stack-sm">
+            <div class="flex-between">
+              <h4>近 30 个交易日情绪温度</h4>
+              <span id="sent-strip-meta" class="text-xs text-muted"></span>
+            </div>
+            <div id="sent-strip" class="sent-strip" role="img" aria-label="近 30 个交易日 AI 情绪评分"></div>
+            <div class="legend-row sent-legend"><span><span class="dot" style="background:var(--down)"></span>谨慎</span><span><span class="dot" style="background:var(--muted)"></span>中性</span><span><span class="dot" style="background:var(--up)"></span>积极</span><span><span class="dot" style="background:var(--border)"></span>暂无数据</span></div>
+          </div>
+
           <details class="subcard">
             <summary class="text-xs font-semibold" style="cursor:pointer;">查看近 30 天历史 AI 盘后简报归档</summary>
             <div id="daily-brief-history" class="stack-sm scroll-box" style="margin-top:8px;"></div>
@@ -221,7 +200,7 @@
           <div class="card stack-sm">
             <div class="flex-between">
               <div>
-                <h2 id="daily-quotes-title">盘后核心 ETF 行情与动量监控</h2>
+                <div class="title-row"><h2 id="daily-quotes-title">盘后核心 ETF 行情与动量监控</h2><span id="daily-quotes-prov" class="prov prov-real">真实收盘</span></div>
                 <p id="daily-quotes-meta" class="text-xs text-muted" style="margin-top:2px;"></p>
               </div>
               <span class="badge badge-muted">收盘后自动更新 · 非盘中盯盘</span>
@@ -295,6 +274,7 @@
               <tbody id="colab-metrics-tbody" class="tabular-nums"></tbody>
             </table>
           </div>
+          <div id="colab-rr"></div>
           <details id="colab-chart-details" class="subcard">
             <summary class="text-xs font-semibold" style="cursor:pointer;">展开查看 Colab 生成的高清净值与回撤对比图</summary>
             <img id="colab-chart-img" src="" alt="Colab 真实回测策略对比图" style="width:100%; height:auto; border-radius:8px; margin-top:10px; display:block;" />
@@ -304,7 +284,7 @@
         <!-- Sandbox Controls -->
         <div class="card stack-md">
           <div class="flex-between">
-            <h2 id="sandbox-heading">实时交互回测沙盒</h2>
+            <div class="title-row"><h2 id="sandbox-heading">交互回测沙盒</h2><span id="sandbox-prov" class="prov prov-real">真实历史行情</span></div>
             <span id="sandbox-subtitle" class="text-xs text-muted">拖动滑块或切换避坑开关，实时观察收益、回撤与手续费变化</span>
           </div>
 
@@ -514,9 +494,132 @@
       </section>
 
 
-      <!-- ==================== TAB: LLM QUANT ==================== -->
-      <section id="tab-llm" role="tabpanel" aria-labelledby="tabbtn-llm" class="tab-panel stack-md hidden">
-        <div class="card llm-hero">
+
+
+      <!-- ==================== TAB 4: LEARNING ROADMAP & NOTES ==================== -->
+      <section id="tab-learn" role="tabpanel" aria-labelledby="tabbtn-learn" class="tab-panel stack-md hidden">
+        <div class="card learn-hero">
+          <div>
+            <div class="title-row"><span class="prov prov-edu">教程</span><span class="eyebrow">学习中心</span></div>
+            <h2 class="learn-title">从零到大模型量化：所有教程都在这一页</h2>
+            <p class="text-xs text-muted" style="margin-top:6px; max-width:70ch;">这一页只放学习内容，不放实时或收盘行情。需要看今天的市场，请回到「行情总览」和「盘后简报」；需要动手验证，请去「回测实验室」和「模拟盘」。</p>
+          </div>
+          <nav class="learn-toc" aria-label="教程目录">
+            <button type="button" data-learn-jump="learn-sec-path">成长路线</button>
+            <button type="button" data-learn-jump="learn-sec-concepts">核心概念</button>
+            <button type="button" data-learn-jump="learn-sec-rules">市场规则</button>
+            <button type="button" data-learn-jump="learn-sec-llm">大模型量化</button>
+            <button type="button" data-learn-jump="llm-prompt-lab">提示词实验室</button>
+            <button type="button" data-learn-jump="learn-sec-notes">学习笔记</button>
+          </nav>
+        </div>
+
+        <div id="learn-sec-path" class="learn-sec stack-md">
+          <h2 class="learn-sec-title"><span>01</span>成长路线</h2>
+          <div class="grid-split-2-1">
+        <div class="card stack-sm">
+          <div class="flex-between">
+            <div>
+              <h2>多市场量化 5 阶段成长路径</h2>
+              <p class="text-xs text-muted" style="margin-top:2px;">勾选已完成任务，支持从 A 股起步平滑拓展到美股与跨市场 AI 量化</p>
+            </div>
+            <span id="learn-progress-text" class="text-xs font-mono font-semibold tabular-nums">0 / 16 (0%)</span>
+          </div>
+          <div class="progress-track">
+            <div id="learn-progress-bar" class="progress-fill" style="width:0%;"></div>
+          </div>
+          <div id="roadmap-grid" class="grid-2" style="padding-top:6px;"></div>
+        </div>
+          <div class="card stack-sm">
+            <h3>我的学习状态</h3>
+            <div class="subcard stack-sm text-xs">
+              <div class="flex-between">
+                <span class="font-semibold">Colab Pro+ GPU 工作台</span>
+                <span class="badge badge-live">已联调通过</span>
+              </div>
+              <p class="text-muted">实测节点：NVIDIA L4 (23 GB VRAM · 53 GB RAM · CUDA 13.0)，任务队列与结果回传 Drive 链路畅通。</p>
+            </div>
+            <div class="subcard stack-sm text-xs">
+              <div class="flex-between">
+                <span class="font-semibold">整体学习进度</span>
+                <span id="overview-learn-pct" class="font-mono font-semibold tabular-nums">0%</span>
+              </div>
+              <div class="progress-track">
+                <div id="overview-learn-bar" class="progress-fill" style="width:0%;"></div>
+              </div>
+              <p class="text-muted" id="overview-notes-count"></p>
+            </div>
+            <div class="subcard stack-sm text-xs">
+              <div class="flex-between">
+                <span class="font-semibold">模拟盘记录概览</span>
+                <button id="btn-goto-journal" type="button" class="btn-link">打开日志 →</button>
+              </div>
+              <p class="text-muted" id="overview-journal-summary"></p>
+            </div>
+          </div>
+          </div>
+        </div>
+
+        <div id="learn-sec-concepts" class="learn-sec stack-md">
+          <h2 class="learn-sec-title"><span>02</span>核心概念与避坑速查</h2>
+          <div class="card concepts-grid">
+            
+            <div class="subcard stack-sm">
+              <h4>4 大策略体检指标</h4>
+              <p class="text-xs text-muted">
+                <strong>年化收益 (CAGR)</strong> 看长期复利；<strong>最大回撤</strong> 看最坏亏多少；<strong>夏普比率</strong> 看单位风险回报（&gt;1 及格，&gt;2 优秀）；<strong>费用占比</strong> 看是否给券商打工。
+              </p>
+            </div>
+            <div class="subcard stack-sm">
+              <h4>未来函数（Look-ahead Bias）</h4>
+              <p class="text-xs text-muted">
+                回测偷看未来信息的 Bug。铁律：<strong>决策只用已公开历史，成交必须晚于信号（T日信号 → T+1日开盘成交）</strong>。
+              </p>
+            </div>
+            <div class="subcard stack-sm">
+              <h4>Walk-Forward & 参数高原</h4>
+              <p class="text-xs text-muted">
+                用过去 3 年挑参数，锁定后跑未知的第 4 年样本外行情，拼接真实曲线；选参数只看连续稳定的“参数高原”，远离孤立极值，并用分批错峰调仓（Tranching）消除择日运气。
+              </p>
+            </div>
+            <div class="subcard stack-sm">
+              <h4>大模型辅助量化的正确姿势</h4>
+              <p class="text-xs text-muted">
+                让 LLM 做<strong>盘后情绪打分、风控提示、回测挑刺与代码起草</strong>；绝不要直接把 K 线价格丢给大模型预测明天涨跌。
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div id="learn-sec-rules" class="learn-sec stack-md">
+          <h2 class="learn-sec-title"><span>03</span>市场规则</h2>
+        <div class="card stack-sm">
+          <div class="flex-between">
+            <h2>跨市场交易规则对照表</h2>
+            <span class="text-xs text-muted">切换顶部市场后，沙盒手数、货币、佣金模型与标的池会自动适配对应规则</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>市场</th>
+                  <th>计价货币</th>
+                  <th>最小单位</th>
+                  <th>交易与涨跌停规则</th>
+                  <th>税费特点</th>
+                  <th>免费 / 进阶数据源</th>
+                  <th>常见交易通道</th>
+                </tr>
+              </thead>
+              <tbody id="overview-rules-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        </div>
+
+        <div id="learn-sec-llm" class="learn-sec stack-md">
+          <h2 class="learn-sec-title"><span>04</span>大模型量化</h2>
+<div class="card llm-hero">
           <div class="llm-hero-main">
             <span class="eyebrow">LLM × Quant</span>
             <h2 class="llm-hero-title">让大模型读懂数字背后的信息，而不是猜明天的涨跌</h2>
@@ -622,53 +725,10 @@
             </div>
           </div>
         </div>
-      </section>
-
-      <!-- ==================== TAB 4: LEARNING ROADMAP & NOTES ==================== -->
-      <section id="tab-learn" role="tabpanel" aria-labelledby="tabbtn-learn" class="tab-panel stack-md hidden">
-        <div class="card stack-sm">
-          <div class="flex-between">
-            <div>
-              <h2>多市场量化 4 阶段成长路径</h2>
-              <p class="text-xs text-muted" style="margin-top:2px;">勾选已完成任务，支持从 A 股起步平滑拓展到美股与跨市场 AI 量化</p>
-            </div>
-            <span id="learn-progress-text" class="text-xs font-mono font-semibold tabular-nums">0 / 12 (0%)</span>
-          </div>
-          <div class="progress-track">
-            <div id="learn-progress-bar" class="progress-fill" style="width:0%;"></div>
-          </div>
-          <div id="roadmap-grid" class="grid-2" style="padding-top:6px;"></div>
         </div>
 
-        <div class="grid-split-5-7">
-          <div class="card stack-sm">
-            <h3>通用核心概念与避坑速查</h3>
-            <div class="subcard stack-sm">
-              <h4>4 大策略体检指标</h4>
-              <p class="text-xs text-muted">
-                <strong>年化收益 (CAGR)</strong> 看长期复利；<strong>最大回撤</strong> 看最坏亏多少；<strong>夏普比率</strong> 看单位风险回报（&gt;1 及格，&gt;2 优秀）；<strong>费用占比</strong> 看是否给券商打工。
-              </p>
-            </div>
-            <div class="subcard stack-sm">
-              <h4>未来函数（Look-ahead Bias）</h4>
-              <p class="text-xs text-muted">
-                回测偷看未来信息的 Bug。铁律：<strong>决策只用已公开历史，成交必须晚于信号（T日信号 → T+1日开盘成交）</strong>。
-              </p>
-            </div>
-            <div class="subcard stack-sm">
-              <h4>Walk-Forward & 参数高原</h4>
-              <p class="text-xs text-muted">
-                用过去 3 年挑参数，锁定后跑未知的第 4 年样本外行情，拼接真实曲线；选参数只看连续稳定的“参数高原”，远离孤立极值，并用分批错峰调仓（Tranching）消除择日运气。
-              </p>
-            </div>
-            <div class="subcard stack-sm">
-              <h4>大模型辅助量化的正确姿势</h4>
-              <p class="text-xs text-muted">
-                让 LLM 做<strong>盘后情绪打分、风控提示、回测挑刺与代码起草</strong>；绝不要直接把 K 线价格丢给大模型预测明天涨跌。
-              </p>
-            </div>
-          </div>
-
+        <div id="learn-sec-notes" class="learn-sec stack-md">
+          <h2 class="learn-sec-title"><span>05</span>学习笔记</h2>
           <div class="card stack-sm">
             <div class="flex-between">
               <h3>个人量化学习笔记（跨市场沉淀）</h3>
@@ -703,31 +763,35 @@
       <!-- ==================== TAB 5: MULTI-MARKET PAPER JOURNAL ==================== -->
       <section id="tab-journal" role="tabpanel" aria-labelledby="tabbtn-journal" class="tab-panel stack-md hidden">
         <div class="grid-kpi">
-          <div class="card stack-sm">
-            <div class="text-xs text-muted"><span id="journal-market-label">A股市场</span> · 模拟盘初始本金</div>
+          <div class="card stack-sm kpi-card">
+            <div class="kpi-label"><span id="journal-market-label">A股市场</span> · 模拟盘初始本金</div>
             <div class="flex-inline">
               <span id="journal-currency-prefix" class="font-mono font-semibold">¥</span>
-              <input id="journal-capital" type="number" min="1000" max="10000000" step="1000" value="80000" class="kpi-input tabular-nums" />
+              <input id="journal-capital" type="number" min="1000" max="10000000" step="1000" value="80000" class="kpi-input tabular-nums" aria-label="模拟盘初始本金" />
             </div>
+            <div class="text-xs text-muted">可直接修改</div>
           </div>
-          <div class="card stack-sm">
-            <div class="text-xs text-muted">当前持仓成本</div>
+          <div class="card stack-sm kpi-card">
+            <div class="kpi-label">总资产</div>
+            <div id="kpi-total" class="kpi-value tabular-nums">¥80,000</div>
+            <div id="kpi-cash-left" class="text-xs text-muted tabular-nums"></div>
+          </div>
+          <div class="card stack-sm kpi-card">
+            <div class="kpi-label">持仓市值</div>
             <div id="kpi-pos-cost" class="kpi-value tabular-nums">¥0</div>
+            <div id="kpi-pos-sub" class="text-xs text-muted tabular-nums"></div>
           </div>
-          <div class="card stack-sm">
-            <div class="text-xs text-muted">可用现金余额</div>
-            <div id="kpi-cash-left" class="kpi-value tabular-nums">¥80,000</div>
-          </div>
-          <div class="card stack-sm">
-            <div class="text-xs text-muted">累计已实现盈亏 / 总佣金</div>
+          <div class="card stack-sm kpi-card">
+            <div class="kpi-label">已实现盈亏 / 累计佣金</div>
             <div id="kpi-realized-pnl" class="kpi-value tabular-nums">¥0 / ¥0</div>
+            <div class="text-xs text-muted">卖出后计入已实现</div>
           </div>
         </div>
 
         <div class="card stack-sm">
           <div class="flex-between">
             <div>
-              <h2 id="journal-form-title">录入模拟盘交易记录</h2>
+              <div class="title-row"><h2 id="journal-form-title">录入模拟盘交易记录</h2><span class="prov prov-sim">模拟 · 非真实账户</span></div>
               <p id="journal-broker-hint" class="text-xs text-muted" style="margin-top:2px;"></p>
             </div>
             <div class="actions-row">
@@ -749,17 +813,36 @@
           </form>
         </div>
 
+        <div class="card stack-sm">
+          <div class="section-head">
+            <div>
+              <h3>模拟盘净值曲线</h3>
+              <p id="journal-curve-meta" class="text-xs text-muted"></p>
+            </div>
+            <div id="journal-curve-legend" class="legend-row"></div>
+          </div>
+          <div id="journal-curve-empty" class="empty-state hidden"></div>
+          <div id="journal-curve-wrap" class="chart-frame">
+            <canvas id="canvas-journal" class="chart-canvas" style="height:220px;"></canvas>
+          </div>
+        </div>
+
         <div class="grid-split-5-7">
           <div class="card stack-sm">
-            <h3>当前模拟持仓</h3>
+            <div class="flex-between">
+              <h3>当前模拟持仓</h3>
+              <span id="positions-price-src" class="text-xs text-muted"></span>
+            </div>
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
                     <th>标的</th>
                     <th class="text-right">股数</th>
-                    <th class="text-right">均价</th>
-                    <th class="text-right">占本金</th>
+                    <th class="text-right">成本价</th>
+                    <th class="text-right">现价</th>
+                    <th class="text-right">市值</th>
+                    <th class="text-right">浮动盈亏</th>
                   </tr>
                 </thead>
                 <tbody id="positions-tbody" class="tabular-nums"></tbody>

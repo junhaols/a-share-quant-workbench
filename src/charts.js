@@ -80,13 +80,19 @@ export function drawLineChart(canvas, dates, seriesList, { isDrawdown, initialCa
 
   ctx.textAlign = "center";
   ctx.textBaseline = "top";
-  let lastYr = "";
-  for (let i = 0; i < n; i += 60) {
-    const yr = dates[i].slice(0, 4);
-    if (yr !== lastYr) {
-      lastYr = yr;
-      ctx.fillStyle = tc.muted;
-      ctx.fillText(yr, xOf(i), H - pad.bottom + 6);
+  ctx.fillStyle = tc.muted;
+  if (n <= 160) {
+    // 短区间（模拟盘等）：按月-日标注，约 6 个刻度
+    const step = Math.max(1, Math.ceil(n / 6));
+    for (let i = 0; i < n; i += step) ctx.fillText(dates[i].slice(5), xOf(i), H - pad.bottom + 6);
+  } else {
+    let lastYr = "";
+    for (let i = 0; i < n; i += 60) {
+      const yr = dates[i].slice(0, 4);
+      if (yr !== lastYr) {
+        lastYr = yr;
+        ctx.fillText(yr, xOf(i), H - pad.bottom + 6);
+      }
     }
   }
 

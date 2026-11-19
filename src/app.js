@@ -18,6 +18,7 @@ import {
 } from "./walkforward.js";
 import { initAiAssistant } from "./ai_assistant.js";
 import { LLM_LAYERS, LLM_PITFALLS, PROMPT_TEMPLATES } from "./llm_lab.js";
+import { LIVE_INDICES, toLiveSymbol, fetchLiveQuotes, marketSession } from "./live_quotes.js";
 
 const THEME_KEY = "antigravity_quant_theme";
 
@@ -28,6 +29,15 @@ let dailySnapshotData = null;
 let aiBriefHistoryData = [];
 let lastWalkForwardCache = null;
 let aiApi = null;
+let currentTab = "overview";
+let sandboxDirty = true;
+const seriesStatus = {}; // marketId -> "loading" | "real" | "missing"
+let liveQuotes = {};
+let liveUpdatedAt = null;
+let liveError = "";
+let liveTimer = null;
+let livePaused = false;
+let liveTick = 0;
 let resFilter = "all";
 let llmTemplateId = "news";
 const llmInputs = Object.fromEntries(PROMPT_TEMPLATES.filter((t) => t.example).map((t) => [t.id, t.example]));
@@ -64,6 +74,17 @@ function migrateState(st) {
   }
   st.seenResourceNames = DEFAULT_RESOURCES.map((d) => d.name);
   if (!st.llmChecklist || typeof st.llmChecklist !== "object") st.llmChecklist = {};
+  // 3) 旧版示例交易用的是虚构成交价，会算出虚假盈亏：未被改动过的示例记录换成按当日真实收盘价的版本
+  const OLD_SAMPLE_PRICES = { t_cn_demo_1: 6.12, t_cn_demo_2: 1.68, t_us_demo_1: 585.0 };
+  const freshSamples = createInitialMarketStates();
+  for (const id of MARKET_ORDER) {
+    const ms = st.markets?.[id];
+    if (!ms || !Array.isArray(ms.trades)) continue;
+    ms.trades = ms.trades.map((t) => {
+      if (OLD_SAMPLE_PRICES[t.id] === undefined || Number(t.price) !== OLD_SAMPLE_PRICES[t.id]) return t;
+      return freshSamples[id].trades.find((x) => x.id === t.id) || t;
+    });
+  }
   return st;
 }
 
@@ -185,6 +206,17 @@ function getActiveMarketState() {
   return state.markets[state.activeMarket];
 }
 
+// 数据来源标签：实时 / 真实收盘 / 演示 / 模拟 / 教程
+function hasRealClose(marketId) {
+  return Boolean(dailySnapshotData?.markets?.[marketId]) || seriesStatus[marketId] === "real";
+}
+
+function setProv(el, kind, text) {
+  if (!el) return;
+  el.className = `prov prov-${kind}`;
+  el.textContent = text;
+}
+
 function getSeriesForMarket(marketId) {
   if (!marketSeriesCache[marketId]) {
     marketSeriesCache[marketId] = generateCalibratedMarket(MARKETS[marketId]);
@@ -207,6 +239,7 @@ function initTheme() {
 }
 
 function applyTheme(theme) {
+  setTimeout(() => drawJournalCurve(), 0);
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem(THEME_KEY, theme);
   const themeBtn = document.getElementById("btn-toggle-theme");
@@ -224,9 +257,8 @@ function renderMarketSwitcher() {
   const box = document.getElementById("market-switcher");
   box.innerHTML = MARKET_ORDER.map((id) => {
     const cfg = MARKETS[id];
-    const series = getSeriesForMarket(id);
-    const hasReal = series.isReal || Boolean(state.markets[id].colabReport);
-    const dotColor = hasReal ? "var(--success)" : id === "us" ? "var(--primary)" : "var(--muted)";
+    const hasReal = hasRealClose(id);
+    const dotColor = hasReal ? "var(--success)" : "var(--muted)";
     return `
       <button type="button" class="market-pill" data-market-id="${id}" aria-pressed="${state.activeMarket === id ? "true" : "false"}">
         <span class="status-dot" style="background:${dotColor}"></span>
@@ -239,6 +271,12 @@ function renderMarketSwitcher() {
   });
 
   const cfg = getActiveCfg();
+  const snapM = dailySnapshotData?.markets?.[state.activeMarket];
+  document.getElementById("data-mode-badge").textContent = snapM
+    ? `${cfg.shortName} · 真实收盘 ${snapM.as_of_date}`
+    : dailySnapshotData
+      ? `${cfg.shortName} · 演示数据`
+      : "加载市场数据中...";
   document.getElementById("active-market-rule-chip").textContent =
     `${cfg.currencyCode} · 最小单位 ${cfg.lotSize} 股 · ${cfg.stampDutyNote}`;
 }
@@ -252,11 +290,14 @@ function switchMarket(marketId) {
   document.getElementById("wf-placeholder").classList.remove("hidden");
   saveState();
   syncControlsToMarket();
+  sandboxDirty = true;
   renderAll();
-  ensureMarketDataLoaded(marketId);
+  if (currentTab === "journal" || currentTab === "sandbox") ensureSeriesLoaded(marketId);
+  if (currentTab === "overview") refreshLive();
 }
 
 function switchTab(targetTab) {
+  currentTab = targetTab;
   document.querySelectorAll(".tab-btn").forEach((b) => {
     const on = b.dataset.tab === targetTab;
     b.setAttribute("aria-selected", on ? "true" : "false");
@@ -266,7 +307,16 @@ function switchTab(targetTab) {
   document.querySelectorAll(".tab-panel").forEach((p) =>
     p.classList.toggle("hidden", p.id !== `tab-${targetTab}`)
   );
-  if (targetTab === "sandbox") setTimeout(redrawCharts, 20);
+  if (targetTab === "sandbox") {
+    if (sandboxDirty) updateSandbox();
+    setTimeout(redrawCharts, 20);
+  }
+  if (targetTab === "journal") {
+    ensureSeriesLoaded(state.activeMarket);
+    setTimeout(renderJournal, 20);
+  }
+  if (targetTab === "overview") startLive();
+  else stopLive();
   if (location.hash.slice(1) !== targetTab) {
     try { history.replaceState(null, "", `#${targetTab}`); } catch (_) {}
   }
@@ -299,6 +349,110 @@ function renderRiskReturnBars(rows) {
     </div>`;
 }
 
+// =========================================================================
+// 实时行情（行情总览）
+// =========================================================================
+function liveWatchSymbols() {
+  return getActiveMarketState().etfs.map((e) => ({ e, sym: toLiveSymbol(state.activeMarket, e.code) }));
+}
+
+async function refreshLive(manual = false) {
+  const btn = document.getElementById("btn-live-refresh");
+  const symbols = [...LIVE_INDICES.map((x) => x.sym), ...liveWatchSymbols().map((x) => x.sym)];
+  try {
+    if (manual) btn.disabled = true;
+    const fresh = await fetchLiveQuotes(symbols);
+    liveQuotes = { ...liveQuotes, ...fresh };
+    liveUpdatedAt = new Date();
+    liveError = Object.keys(fresh).length ? "" : "行情接口没有返回数据";
+  } catch (err) {
+    liveError = `行情获取失败：${err.message || err}`;
+  } finally {
+    btn.disabled = false;
+  }
+  renderLive();
+  if (currentTab === "journal") renderJournal();
+  if (manual && !liveError) toast("行情已刷新", "success");
+}
+
+function startLive() {
+  if (livePaused || liveTimer || document.hidden) return;
+  refreshLive();
+  liveTimer = setInterval(() => {
+    // 三个市场都休市时降低频率：每 4 次只刷 1 次
+    const anyOpen = ["cn", "global", "us"].some((m) => marketSession(m).open);
+    liveTick += 1;
+    if (anyOpen || liveTick % 4 === 0) refreshLive();
+  }, 15000);
+}
+
+function stopLive() {
+  if (liveTimer) clearInterval(liveTimer);
+  liveTimer = null;
+}
+
+function renderLive() {
+  const idxEl = document.getElementById("live-indices");
+  if (!idxEl) return;
+  const fmtNum = (v, d = 2) => (v === null || v === undefined ? "—" : Number(v).toLocaleString(undefined, { minimumFractionDigits: d, maximumFractionDigits: d }));
+  const signed = (v, d = 2) => (v === null || v === undefined ? "—" : `${v > 0 ? "+" : ""}${Number(v).toFixed(d)}`);
+  const groups = [
+    { id: "cn", label: "A股" },
+    { id: "global", label: "港股" },
+    { id: "us", label: "美股" },
+  ];
+  idxEl.innerHTML = groups
+    .map((g) => {
+      const sess = marketSession(g.id);
+      const tiles = LIVE_INDICES.filter((x) => x.market === g.id)
+        .map((x) => {
+          const q = liveQuotes[x.sym];
+          const dir = q ? (q.pct > 0 ? "up" : q.pct < 0 ? "down" : "flat") : "flat";
+          return `
+          <div class="live-tile is-${dir}" data-market="${g.id}">
+            <div class="live-tile-name">${escapeHtml(x.name)}</div>
+            <div class="live-tile-px font-mono tabular-nums">${q ? fmtNum(q.price) : "—"}</div>
+            <div class="live-tile-chg font-mono tabular-nums">${q ? `${signed(q.change)}　${signed(q.pct)}%` : "加载中"}</div>
+          </div>`;
+        })
+        .join("");
+      return `
+        <div class="live-group">
+          <div class="live-group-head"><span class="font-semibold">${g.label}</span><span class="sess-dot ${sess.open ? "is-open" : ""}"></span><span class="text-xs text-muted">${escapeHtml(sess.text)}</span></div>
+          <div class="live-tiles">${tiles}</div>
+        </div>`;
+    })
+    .join("");
+
+  const cfg = getActiveCfg();
+  document.getElementById("live-watch-title").textContent = `${cfg.shortName} · 自选 ETF 实时报价`;
+  document.getElementById("live-session").textContent = `${marketSession(state.activeMarket).text}（未计入节假日）`;
+  const rows = liveWatchSymbols();
+  document.getElementById("live-watch-tbody").innerHTML = rows
+    .map(({ e, sym }) => {
+      const q = sym ? liveQuotes[sym] : null;
+      const col = q ? (q.pct > 0 ? "var(--up)" : q.pct < 0 ? "var(--down)" : "var(--muted)") : "var(--muted)";
+      return `
+      <tr>
+        <td class="whitespace-nowrap"><span class="font-mono font-semibold">${escapeHtml(e.code)}</span> ${escapeHtml(e.name)}</td>
+        <td class="text-right font-mono font-semibold">${q ? `${cfg.currency}${fmtNum(q.price, 3)}` : "—"}</td>
+        <td class="text-right font-mono" style="color:${col}">${q ? signed(q.change, 3) : "—"}</td>
+        <td class="text-right font-mono font-semibold" style="color:${col}">${q ? `${signed(q.pct)}%` : sym ? "加载中" : "暂不支持"}</td>
+        <td class="text-right font-mono text-muted whitespace-nowrap">${q && q.low !== null ? `${fmtNum(q.low, 3)} – ${fmtNum(q.high, 3)}` : "—"}</td>
+        <td class="text-right font-mono text-muted">${q ? fmtNum(q.prevClose, 3) : "—"}</td>
+        <td class="text-right font-mono text-muted whitespace-nowrap">${q ? escapeHtml(q.time) : "—"}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const status = document.getElementById("live-status");
+  status.textContent = liveError;
+  status.style.color = liveError ? "var(--error)" : "";
+  document.getElementById("live-updated").textContent = liveUpdatedAt
+    ? `本地 ${liveUpdatedAt.toLocaleTimeString("zh-CN", { hour12: false })} 更新${livePaused ? " · 已暂停" : ""}`
+    : "";
+}
+
 function renderOverviewToday() {
   const el = document.getElementById("overview-today");
   if (!el) return;
@@ -306,7 +460,9 @@ function renderOverviewToday() {
   const brief = dailySnapshotData?.ai_brief;
   const snap = dailySnapshotData?.markets?.[state.activeMarket];
   if (!brief || !snap) {
-    el.innerHTML = `<div class="today-empty text-xs text-muted">正在读取今日盘后数据…</div>`;
+    el.innerHTML = dailySnapshotData
+      ? `<div class="today-empty text-xs text-muted"><span class="prov prov-demo">暂无真实收盘数据</span> ${escapeHtml(cfg.shortName)}尚未接入每日收盘数据，切换到 A股或美股查看今日盘后速览。</div>`
+      : `<div class="today-empty text-xs text-muted">正在读取今日盘后数据…</div>`;
     return;
   }
   const sc = Math.max(-2, Math.min(2, Number(brief.sentiment_score || 0)));
@@ -318,7 +474,8 @@ function renderOverviewToday() {
   el.innerHTML = `
     <div class="today-main">
       <div class="today-meta">
-        <span class="eyebrow">今日盘后速览 · ${escapeHtml(snap.as_of_date || "")}</span>
+        <span class="prov prov-real">真实收盘 · ${escapeHtml(snap.as_of_date || "")}</span>
+        <span class="eyebrow">今日盘后速览</span>
         <span class="badge">${escapeHtml(brief.regime || "中性观察")}</span>
         <span class="sentiment-pill" style="color:${scColor}">${sc > 0 ? "+" : ""}${sc} ${labels[String(sc)]}</span>
       </div>
@@ -339,18 +496,17 @@ function renderOverviewToday() {
 
 function renderOverview() {
   renderOverviewToday();
+  renderLive();
   const cardsEl = document.getElementById("overview-market-cards");
   cardsEl.innerHTML = MARKET_ORDER.map((id) => {
     const cfg = MARKETS[id];
     const ms = state.markets[id];
-    const series = getSeriesForMarket(id);
     const rep = ms.colabReport;
     const isSel = state.activeMarket === id;
-    const badgeText = series.isReal
-      ? `真实行情 · ${series.dates.length} 交易日`
-      : rep
-        ? "已导入 Colab 报告"
-        : cfg.statusText;
+    const snapM = dailySnapshotData?.markets?.[id];
+    const badgeHtml = snapM
+      ? `<span class="prov prov-real">真实收盘 · ${snapM.trading_days_total || ""} 交易日</span>`
+      : `<span class="prov prov-demo">演示数据</span>`;
 
     let metricHtml = `<p class="text-xs text-muted">标的池：${ms.etfs.length} 只核心 ETF · ${escapeHtml(cfg.brokerNote)}</p>`;
     if (rep && rep.strategies) {
@@ -374,7 +530,7 @@ function renderOverview() {
       <div class="card market-overview-card stack-sm ${isSel ? "is-selected" : ""}" data-overview-market="${id}">
         <div class="flex-between">
           <h3>${escapeHtml(cfg.label)}</h3>
-          <span class="badge">${escapeHtml(badgeText)}</span>
+          ${badgeHtml}
         </div>
         ${metricHtml}
         <div class="flex-between text-xs text-muted" style="padding-top:4px; border-top:1px solid var(--border);">
@@ -390,53 +546,6 @@ function renderOverview() {
 
   const cfg = getActiveCfg();
   const ms = getActiveMarketState();
-  const rep = ms.colabReport;
-  document.getElementById("overview-colab-title").textContent = `${cfg.shortName} · Colab 真实回测快照`;
-  const metaEl = document.getElementById("overview-colab-meta");
-  const bodyEl = document.getElementById("overview-colab-body");
-
-  if (rep && rep.strategies) {
-    metaEl.textContent = `数据区间 ${rep.date_range?.[0] || ""} ~ ${rep.date_range?.[1] || ""}（${rep.trading_days} 交易日）| 初始资金 ${fmtMoney(rep.params?.initial_cash || cfg.defaultCash, cfg.currency)}`;
-    const rows = Object.entries(rep.strategies);
-    bodyEl.innerHTML = `
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>策略</th>
-              <th class="text-right">期末资金</th>
-              <th class="text-right">年化收益</th>
-              <th class="text-right">最大回撤</th>
-              <th class="text-right">夏普</th>
-              <th class="text-right">费用占比</th>
-            </tr>
-          </thead>
-          <tbody class="tabular-nums">
-            ${rows
-              .map(
-                ([name, m]) => `
-                <tr>
-                  <td class="font-semibold">${escapeHtml(name)}</td>
-                  <td class="text-right font-mono">${fmtMoney(Math.round(m.final_equity), cfg.currency)}</td>
-                  <td class="text-right font-mono font-semibold" style="color:${m.cagr_pct >= 0 ? "var(--up)" : "var(--down)"}">${m.cagr_pct >= 0 ? "+" : ""}${m.cagr_pct}%</td>
-                  <td class="text-right font-mono" style="color:var(--down)">${m.max_drawdown_pct}%</td>
-                  <td class="text-right font-mono">${m.sharpe}</td>
-                  <td class="text-right font-mono text-muted">${m.cost_ratio_pct}%</td>
-                </tr>`
-              )
-              .join("")}
-          </tbody>
-        </table>
-      </div>
-      ${renderRiskReturnBars(rows)}`;
-  } else {
-    metaEl.textContent = `${cfg.shortName}尚未导入 Colab 真实回测 JSON，当前沙盒使用多周期教学演示行情`;
-    bodyEl.innerHTML = `
-      <div class="subcard text-xs text-muted stack-sm">
-        <p>你可以立即进入「回测与 Walk-Forward 实验室」体验 ${escapeHtml(cfg.shortName)} ETF 策略对比，或由 GitHub Actions 每日盘后自动拉取该市场真实行情（<code>${escapeHtml(cfg.dataSources)}</code>）。</p>
-      </div>`;
-  }
-
   const doneCnt = state.roadmap.filter((x) => x.done).length;
   const pct = Math.round((doneCnt / Math.max(1, state.roadmap.length)) * 100);
   document.getElementById("overview-learn-pct").textContent = `${doneCnt}/${state.roadmap.length} (${pct}%)`;
@@ -671,6 +780,13 @@ function renderDailyTab() {
 
   // Render Quotes table
   document.getElementById("daily-quotes-title").textContent = `${cfg.label} · 盘后核心 ETF 行情与动量监控`;
+  setProv(document.getElementById("daily-quotes-prov"), snapMarket.isDemo ? "demo" : "real", snapMarket.isDemo ? "演示数据（模拟生成）" : `真实收盘 · ${snapMarket.as_of_date}`);
+  setProv(
+    document.getElementById("daily-brief-prov"),
+    brief ? "real" : "demo",
+    brief ? (brief.source === "llm" ? `真实收盘 · ${brief.model} 生成` : "真实收盘 · 规则引擎生成") : "等待首次生成"
+  );
+  renderSentimentStrip();
   document.getElementById("daily-quotes-meta").textContent =
     `最新交易日：${snapMarket.as_of_date}${snapMarket.isDemo ? "（演示行情，GitHub Actions 每日盘后将自动拉取美股/A股真实数据）" : "（真实收盘行情）"}`;
 
@@ -711,6 +827,37 @@ function renderDailyTab() {
     .join("");
 }
 
+function renderSentimentStrip() {
+  const el = document.getElementById("sent-strip");
+  if (!el) return;
+  const hist = [...aiBriefHistoryData]
+    .filter((h) => h && h.date)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(-30);
+  const slots = 30;
+  const pad = slots - hist.length;
+  const color = (sc) => (sc > 0 ? "var(--up)" : sc < 0 ? "var(--down)" : "var(--muted)");
+  const labels = { "-2": "极度谨慎", "-1": "偏谨慎", "0": "中性观望", "1": "偏积极", "2": "强势偏多" };
+  el.innerHTML =
+    Array.from({ length: pad }, () => `<span class="sent-cell is-empty"></span>`).join("") +
+    hist
+      .map((h) => {
+        const sc = Math.max(-2, Math.min(2, Number(h.sentiment_score || 0)));
+        const strength = 0.45 + Math.abs(sc) * 0.275;
+        const tip = `${h.date} · ${sc > 0 ? "+" : ""}${sc} ${labels[String(sc)]} · ${h.regime || ""}\n${h.headline || ""}`;
+        return `<span class="sent-cell" style="background:${color(sc)}; opacity:${sc === 0 ? 0.55 : strength.toFixed(2)}; height:${10 + Math.abs(sc) * 7}px;" title="${escapeHtml(tip)}"></span>`;
+      })
+      .join("");
+  const meta = document.getElementById("sent-strip-meta");
+  if (meta) {
+    if (!hist.length) meta.textContent = "暂无历史简报";
+    else {
+      const avg = hist.reduce((a, h) => a + Number(h.sentiment_score || 0), 0) / hist.length;
+      meta.textContent = `已积累 ${hist.length} 天 · 平均 ${avg > 0 ? "+" : ""}${avg.toFixed(2)}${hist.length < 30 ? " · 每个交易日自动追加" : ""}`;
+    }
+  }
+}
+
 async function loadDailySnapshots() {
   try {
     const resp = await fetch("./data/daily_snapshot.json", { cache: "no-store" });
@@ -722,7 +869,9 @@ async function loadDailySnapshots() {
   } catch (_) {}
   renderDailyTab();
   renderLlmPipelineStatus();
-  renderOverviewToday();
+  renderMarketSwitcher();
+  renderOverview();
+  if (currentTab === "journal") renderJournal();
 }
 
 // =========================================================================
@@ -795,7 +944,19 @@ function bindChartHover(canvas) {
 }
 
 function updateSandbox() {
+  if (currentTab !== "sandbox") {
+    sandboxDirty = true;
+    return;
+  }
   const cfg = getActiveCfg();
+  const st = seriesStatus[state.activeMarket];
+  if (st !== "real" && st !== "missing") {
+    document.getElementById("sandbox-subtitle").textContent = "正在加载历史日线数据…";
+    setProv(document.getElementById("sandbox-prov"), "demo", "加载中");
+    ensureSeriesLoaded(state.activeMarket);
+    return;
+  }
+  sandboxDirty = false;
   const series = getSeriesForMarket(state.activeMarket);
   const initialCash = Number(document.getElementById("ctrl-cash").value);
   const rebalEvery = Number(document.getElementById("ctrl-rebal").value);
@@ -814,7 +975,8 @@ function updateSandbox() {
   document.getElementById("lookahead-warning").classList.toggle("hidden", !lookahead);
 
   const dateSpan = `${series.dates[0]} ~ ${series.dates[series.dates.length - 1]}`;
-  document.getElementById("sandbox-heading").textContent = `${cfg.label} 实时交互回测沙盒 · ${series.isReal ? "真实历史行情" : "教学演示行情"}`;
+  document.getElementById("sandbox-heading").textContent = `${cfg.label} 交互回测沙盒`;
+  setProv(document.getElementById("sandbox-prov"), series.isReal ? "real" : "demo", series.isReal ? "真实历史行情" : "演示数据（模拟生成）");
   document.getElementById("sandbox-subtitle").textContent =
     `${dateSpan}（${series.dates.length} 交易日 · 最小 ${cfg.lotSize} 股整数倍）`;
   document.getElementById("chart-title-line").textContent =
@@ -882,10 +1044,6 @@ function updateSandbox() {
   }
   document.getElementById("sandbox-diagnosis").innerHTML = diag.join("");
 
-  document.getElementById("data-mode-badge").textContent = series.isReal
-    ? `${cfg.shortName} · 真实行情 (${dateSpan})`
-    : `${cfg.shortName} · 演示行情`;
-
   redrawCharts();
 }
 
@@ -928,6 +1086,12 @@ function renderWalkForwardHeatmap() {
 }
 
 function executeWalkForwardLab() {
+  const st = seriesStatus[state.activeMarket];
+  if (st !== "real" && st !== "missing") {
+    toast("历史数据还在加载，请稍候再运行", "info");
+    ensureSeriesLoaded(state.activeMarket);
+    return;
+  }
   const cfg = getActiveCfg();
   const series = getSeriesForMarket(state.activeMarket);
   const opts = {
@@ -1047,22 +1211,37 @@ function renderColabReport() {
     )
     .join("");
 
+  document.getElementById("colab-rr").innerHTML = renderRiskReturnBars(
+    Object.entries(rep.strategies || {})
+  );
+
+  // 高清对比图约 300KB：展开时才加载
   const detailsEl = document.getElementById("colab-chart-details");
   const imgEl = document.getElementById("colab-chart-img");
   detailsEl.style.display = "";
   imgEl.onerror = () => {
     detailsEl.style.display = "none";
   };
-  imgEl.src = cfg.colabChartUrl;
+  imgEl.dataset.src = cfg.colabChartUrl;
+  if (detailsEl.open) imgEl.src = cfg.colabChartUrl;
+  else imgEl.removeAttribute("src");
+  detailsEl.ontoggle = () => {
+    if (detailsEl.open && imgEl.dataset.src && imgEl.getAttribute("src") !== imgEl.dataset.src) imgEl.src = imgEl.dataset.src;
+  };
 }
 
-async function ensureMarketDataLoaded(marketId) {
+// 日线大文件（每个市场约 250KB）只在进入回测实验室或模拟盘时才加载
+async function ensureSeriesLoaded(marketId) {
   const cfg = MARKETS[marketId];
-  if (!cfg) return;
-
-  if (!marketSeriesCache[marketId]?.isReal && cfg.realDataUrl) {
+  if (!cfg || seriesStatus[marketId] === "real" || seriesStatus[marketId] === "missing" || seriesStatus[marketId] === "loading") return;
+  if (!cfg.realDataUrl) {
+    seriesStatus[marketId] = "missing";
+    return;
+  }
+  seriesStatus[marketId] = "loading";
+  {
     try {
-      const resp = await fetch(cfg.realDataUrl, { cache: "no-store" });
+      const resp = await fetch(cfg.realDataUrl);
       if (resp.ok) {
         const raw = await resp.json();
         if (raw && Array.isArray(raw.dates) && raw.open && raw.close) {
@@ -1073,18 +1252,22 @@ async function ensureMarketDataLoaded(marketId) {
             close[c] = Float64Array.from(raw.close[c]);
           }
           marketSeriesCache[marketId] = { dates: raw.dates, codes: raw.codes, open, close, isReal: true };
-          if (state.activeMarket === marketId) {
-            renderMarketSwitcher();
-            renderOverview();
-            renderDailyTab();
-            updateSandbox();
-          }
+          seriesStatus[marketId] = "real";
         }
       }
     } catch (_) {}
+    if (seriesStatus[marketId] !== "real") seriesStatus[marketId] = "missing";
+    if (state.activeMarket === marketId) {
+      sandboxDirty = true;
+      if (currentTab === "sandbox") updateSandbox();
+      if (currentTab === "journal") renderJournal();
+    }
   }
+}
 
-  if (cfg.colabReportUrl) {
+async function loadColabReport(marketId) {
+  const cfg = MARKETS[marketId];
+  if (cfg?.colabReportUrl) {
     try {
       const resp = await fetch(cfg.colabReportUrl, { cache: "no-store" });
       if (resp.ok) {
@@ -1189,6 +1372,107 @@ function renderNotes() {
   });
 }
 
+function isSampleTrade(t) {
+  return /_demo_/.test(String(t.id || "")) || String(t.note || "").includes("【示例记录】");
+}
+
+let journalCurveCache = null;
+
+function renderJournalCurve(sortedTrades, cap) {
+  const cfg = getActiveCfg();
+  const wrap = document.getElementById("journal-curve-wrap");
+  const empty = document.getElementById("journal-curve-empty");
+  const meta = document.getElementById("journal-curve-meta");
+  const legend = document.getElementById("journal-curve-legend");
+  const showEmpty = (msg) => {
+    journalCurveCache = null;
+    wrap.classList.add("hidden");
+    empty.classList.remove("hidden");
+    empty.textContent = msg;
+    legend.innerHTML = "";
+  };
+  const st = seriesStatus[state.activeMarket];
+  if (!sortedTrades.length) {
+    meta.textContent = "按每日收盘价重估你的模拟持仓，并与同期持有基准对比";
+    return showEmpty("录入第一笔模拟交易后，这里会按每日收盘价画出组合净值曲线。");
+  }
+  if (st !== "real" && st !== "missing") {
+    meta.textContent = "";
+    return showEmpty("正在加载历史日线数据…");
+  }
+  const series = getSeriesForMarket(state.activeMarket);
+  const dates = series.dates;
+  const i0 = dates.findIndex((d) => d >= sortedTrades[0].date);
+  if (i0 < 0 || dates.length - i0 < 2) {
+    meta.textContent = "";
+    return showEmpty(`历史日线截至 ${dates[dates.length - 1]}，首笔交易之后的交易日不足 2 天，收盘数据更新后会自动画出曲线。`);
+  }
+  const n = dates.length - i0;
+  const eq = new Float64Array(n);
+  const hold = {};
+  let cash = cap;
+  let k = 0;
+  for (let d = 0; d < n; d++) {
+    const day = dates[i0 + d];
+    while (k < sortedTrades.length && sortedTrades[k].date <= day) {
+      const t = sortedTrades[k++];
+      const gross = t.price * t.qty;
+      const comm = Number(t.commission) || 0;
+      if (t.side === "BUY") {
+        cash -= gross + comm;
+        hold[t.code] = (hold[t.code] || 0) + t.qty;
+      } else {
+        const q = Math.min(t.qty, hold[t.code] || 0);
+        cash += t.price * q - comm;
+        hold[t.code] = (hold[t.code] || 0) - q;
+      }
+      hold[`__px_${t.code}`] = t.price;
+    }
+    let v = cash;
+    for (const [code, q] of Object.entries(hold)) {
+      if (code.startsWith("__px_") || !q) continue;
+      const arr = series.close[code];
+      v += q * (arr ? arr[i0 + d] : hold[`__px_${code}`]);
+    }
+    eq[d] = v;
+  }
+  const dd = (arr) => {
+    const out = new Float64Array(arr.length);
+    let peak = -Infinity;
+    for (let i = 0; i < arr.length; i++) {
+      peak = Math.max(peak, arr[i]);
+      out[i] = peak > 0 ? (arr[i] / peak - 1) * 100 : 0;
+    }
+    return out;
+  };
+  const list = [{ name: "我的模拟盘", equity: eq, drawdown: dd(eq), colorVar: "--chart-1" }];
+  const benchCode = cfg.defaultEtfs?.[0]?.code;
+  const benchArr = benchCode ? series.close[benchCode] : null;
+  if (benchArr) {
+    const bq = new Float64Array(n);
+    for (let d = 0; d < n; d++) bq[d] = cap * (benchArr[i0 + d] / benchArr[i0]);
+    list.push({ name: `同期持有 ${cfg.defaultEtfs[0].name}`, equity: bq, drawdown: dd(bq), colorVar: "--chart-3" });
+  }
+  const ret = (eq[n - 1] / cap - 1) * 100;
+  meta.innerHTML = `${escapeHtml(dates[i0])} ~ ${escapeHtml(dates[dates.length - 1])} · ${n} 个交易日 · 按${series.isReal ? "真实收盘价" : "演示行情"}重估 · 累计 <span style="color:${ret >= 0 ? "var(--up)" : "var(--down)"}; font-weight:600;">${ret >= 0 ? "+" : ""}${ret.toFixed(2)}%</span>`;
+  legend.innerHTML = list.map((x) => `<span><span class="dot" style="background:var(${x.colorVar})"></span>${escapeHtml(x.name)}</span>`).join("");
+  empty.classList.add("hidden");
+  wrap.classList.remove("hidden");
+  journalCurveCache = { dates: dates.slice(i0), list, cap };
+  drawJournalCurve();
+}
+
+function drawJournalCurve() {
+  if (!journalCurveCache || currentTab !== "journal") return;
+  const { dates, list, cap } = journalCurveCache;
+  drawLineChart(document.getElementById("canvas-journal"), dates, list, {
+    isDrawdown: false,
+    initialCash: cap,
+    hoverIdx: null,
+    currency: getActiveCfg().currency,
+  });
+}
+
 function renderJournal() {
   const cfg = getActiveCfg();
   const ms = getActiveMarketState();
@@ -1242,8 +1526,45 @@ function renderJournal() {
   const activePos = Object.values(pos).filter((p) => p.qty > 0);
   const posCostSum = activePos.reduce((acc, p) => acc + p.costTotal, 0);
 
-  document.getElementById("kpi-pos-cost").textContent = fmtMoney(Math.round(posCostSum), cfg.currency);
-  document.getElementById("kpi-cash-left").textContent = fmtMoney(Math.round(cash), cfg.currency);
+  // 现价优先级：实时行情 > 最新收盘快照 > 已加载的历史日线 > 成本价
+  const snapM = dailySnapshotData?.markets?.[state.activeMarket];
+  const series = seriesStatus[state.activeMarket] === "real" ? marketSeriesCache[state.activeMarket] : null;
+  const priceOf = (code) => {
+    const lq = liveQuotes[toLiveSymbol(state.activeMarket, code)];
+    if (lq) return { px: lq.price, src: "live" };
+    const se = snapM?.etfs?.find((e) => e.code === code);
+    if (se) return { px: Number(se.close), src: "close" };
+    const arr = series?.close?.[code];
+    if (arr?.length) return { px: arr[arr.length - 1], src: "close" };
+    return { px: null, src: "cost" };
+  };
+  let mktValue = 0;
+  const srcSet = new Set();
+  for (const p of activePos) {
+    const { px, src } = priceOf(p.code);
+    p.px = px;
+    p.value = px !== null ? px * p.qty : p.costTotal;
+    p.pnl = p.value - p.costTotal;
+    mktValue += p.value;
+    srcSet.add(src);
+  }
+  const unrealized = mktValue - posCostSum;
+  const total = cash + mktValue;
+  const sign = (v) => (v > 0 ? "+" : "");
+  const pnlColor = (v) => (v > 0 ? "var(--up)" : v < 0 ? "var(--down)" : "var(--muted)");
+
+  document.getElementById("kpi-pos-cost").textContent = fmtMoney(Math.round(mktValue), cfg.currency);
+  const posSub = document.getElementById("kpi-pos-sub");
+  posSub.innerHTML = activePos.length
+    ? `浮动盈亏 <span style="color:${pnlColor(unrealized)}; font-weight:600;">${sign(unrealized)}${fmtMoney(Math.round(unrealized), cfg.currency)}（${sign(unrealized)}${posCostSum ? ((unrealized / posCostSum) * 100).toFixed(2) : "0.00"}%）</span>`
+    : "当前空仓";
+  document.getElementById("kpi-total").innerHTML = `${fmtMoney(Math.round(total), cfg.currency)}`;
+  document.getElementById("kpi-cash-left").innerHTML = `较本金 <span style="color:${pnlColor(total - cap)}; font-weight:600;">${sign(total - cap)}${(((total - cap) / cap) * 100).toFixed(2)}%</span> · 可用现金 ${fmtMoney(Math.round(cash), cfg.currency)}`;
+  document.getElementById("positions-price-src").textContent = srcSet.has("live")
+    ? "现价：实时行情"
+    : srcSet.has("close")
+      ? `现价：最新收盘${snapM ? ` ${snapM.as_of_date}` : ""}`
+      : activePos.length ? "暂无行情，按成本价估算" : "";
   const pnlSign = realizedPnl > 0 ? "+" : "";
   document.getElementById("kpi-realized-pnl").textContent =
     `${pnlSign}${fmtMoney(realizedPnl, cfg.currency, 1)} / ${fmtMoney(totalComm, cfg.currency, 1)}`;
@@ -1252,17 +1573,19 @@ function renderJournal() {
     ? activePos
         .map((p) => {
           const avg = p.costTotal / p.qty;
-          const pct = (p.costTotal / cap) * 100;
+          const pnlPct = p.costTotal ? (p.pnl / p.costTotal) * 100 : 0;
           return `
             <tr>
-              <td class="font-semibold">${escapeHtml(p.code)} ${escapeHtml(p.name)}</td>
+              <td class="font-semibold whitespace-nowrap">${escapeHtml(p.code)} ${escapeHtml(p.name)}</td>
               <td class="text-right font-mono">${p.qty.toLocaleString()}</td>
               <td class="text-right font-mono">${cfg.currency}${avg.toFixed(3)}</td>
-              <td class="text-right font-mono">${pct.toFixed(1)}%</td>
+              <td class="text-right font-mono">${p.px !== null ? `${cfg.currency}${p.px.toFixed(3)}` : "—"}</td>
+              <td class="text-right font-mono">${fmtMoney(Math.round(p.value), cfg.currency)}</td>
+              <td class="text-right font-mono whitespace-nowrap" style="color:${pnlColor(p.pnl)}; font-weight:600;">${sign(p.pnl)}${fmtMoney(Math.round(p.pnl), cfg.currency)}<br><span class="text-xs">${sign(pnlPct)}${pnlPct.toFixed(2)}%</span></td>
             </tr>`;
         })
         .join("")
-    : `<tr><td colspan="4" class="text-muted" style="text-align:center; padding:20px 0;">当前市场空仓，可从上方录入模拟买入单</td></tr>`;
+    : `<tr><td colspan="6" class="text-muted" style="text-align:center; padding:20px 0;">当前市场空仓，可从上方录入模拟买入单</td></tr>`;
 
   document.getElementById("trades-tbody").innerHTML = ms.trades.length
     ? [...ms.trades]
@@ -1271,7 +1594,7 @@ function renderJournal() {
           (t) => `
           <tr>
             <td class="font-mono whitespace-nowrap">${escapeHtml(t.date)}</td>
-            <td class="whitespace-nowrap font-semibold">${escapeHtml(t.code)} ${escapeHtml(t.name)}</td>
+            <td class="whitespace-nowrap font-semibold">${escapeHtml(t.code)} ${escapeHtml(t.name)}${isSampleTrade(t) ? ` <span class="prov prov-demo">示例</span>` : ""}</td>
             <td class="font-mono font-semibold" style="color:${t.side === "BUY" ? "var(--rise)" : "var(--fall)"}">${t.side === "BUY" ? "买入" : "卖出"}</td>
             <td class="text-right font-mono whitespace-nowrap">${cfg.currency}${Number(t.price).toFixed(3)} × ${t.qty}</td>
             <td class="text-right font-mono">${cfg.currency}${Number(t.commission).toFixed(2)}</td>
@@ -1281,6 +1604,8 @@ function renderJournal() {
         )
         .join("")
     : `<tr><td colspan="7" class="text-muted" style="text-align:center; padding:20px 0;">当前市场暂无模拟交易记录</td></tr>`;
+
+  renderJournalCurve(sorted, cap);
 
   document.querySelectorAll("[data-del-trade]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1619,6 +1944,10 @@ function getContextSnapshot(contextType) {
     }
   }
   if (contextType === "daily" || contextType === "general") {
+    const live = liveWatchSymbols()
+      .map(({ e, sym }) => (liveQuotes[sym] ? { code: e.code, name: e.name, price: liveQuotes[sym].price, pct: liveQuotes[sym].pct, time: liveQuotes[sym].time } : null))
+      .filter(Boolean);
+    if (live.length) base.realtime_quotes = { source: "腾讯财经（可能有延迟）", fetched_at: liveUpdatedAt?.toISOString(), quotes: live };
     base.daily_snapshot = dailySnapshotData?.markets?.[state.activeMarket] || buildFallbackDailyMarket(state.activeMarket);
   }
   if (contextType === "journal" || contextType === "general") {
@@ -1662,9 +1991,21 @@ function bindEvents() {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
   });
 
-  document.getElementById("btn-goto-sandbox").addEventListener("click", () => switchTab("sandbox"));
-  document.getElementById("btn-goto-daily").addEventListener("click", () => switchTab("daily"));
-  document.getElementById("btn-goto-journal").addEventListener("click", () => switchTab("journal"));
+  document.getElementById("btn-goto-journal")?.addEventListener("click", () => switchTab("journal"));
+  document.querySelectorAll("[data-learn-jump]").forEach((btn) =>
+    btn.addEventListener("click", () => document.getElementById(btn.dataset.learnJump)?.scrollIntoView({ behavior: "smooth", block: "start" }))
+  );
+  document.getElementById("btn-live-refresh").addEventListener("click", () => refreshLive(true));
+  document.getElementById("btn-live-toggle").addEventListener("click", (e) => {
+    livePaused = !livePaused;
+    e.currentTarget.textContent = livePaused ? "恢复自动刷新" : "暂停自动刷新";
+    if (livePaused) stopLive();
+    else startLive();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopLive();
+    else if (currentTab === "overview") startLive();
+  });
   document.getElementById("btn-ask-ai-daily").addEventListener("click", () => {
     document.getElementById("btn-open-ai").click();
   });
@@ -1905,21 +2246,25 @@ function bindEvents() {
     renderResources();
   });
 
-  window.addEventListener("resize", redrawCharts);
+  window.addEventListener("resize", () => {
+    redrawCharts();
+    drawJournalCurve();
+  });
 }
 
 function renderAll() {
-  renderMarketSwitcher();
-  renderOverview();
-  renderDailyTab();
-  renderColabReport();
-  updateSandbox();
-  renderRoadmap();
-  renderNotes();
-  renderEtfs();
-  renderJournal();
-  renderResources();
-  renderLlmTab();
+  // 每个模块独立渲染：一个出错不影响其他模块和后续初始化
+  const parts = [
+    renderMarketSwitcher, renderOverview, renderDailyTab, renderColabReport, updateSandbox,
+    renderRoadmap, renderNotes, renderEtfs, renderJournal, renderResources, renderLlmTab,
+  ];
+  for (const fn of parts) {
+    try {
+      fn();
+    } catch (err) {
+      console.error(`[QuantLab] ${fn.name} 渲染失败`, err);
+    }
+  }
 }
 
 initTheme();
@@ -1927,13 +2272,20 @@ syncControlsToMarket();
 bindEvents();
 aiApi = initAiAssistant({ getContextSnapshot });
 const TAB_IDS = Array.from(document.querySelectorAll(".tab-btn")).map((b) => b.dataset.tab);
+const HASH_ALIASES = { llm: ["learn", "learn-sec-llm"] };
 function syncTabFromHash() {
   const t = location.hash.slice(1);
   if (TAB_IDS.includes(t)) switchTab(t);
+  else if (HASH_ALIASES[t]) {
+    const [tab, anchor] = HASH_ALIASES[t];
+    switchTab(tab);
+    setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ block: "start" }), 60);
+  }
 }
 window.addEventListener("hashchange", syncTabFromHash);
 bindLlmEvents();
 renderAll();
 syncTabFromHash();
+if (currentTab === "overview") startLive();
 loadDailySnapshots();
-MARKET_ORDER.forEach((id) => ensureMarketDataLoaded(id));
+MARKET_ORDER.forEach((id) => loadColabReport(id));
