@@ -704,3 +704,141 @@ canvas.chart-canvas {
   border-radius: 999px;
   border: 1px solid var(--border);
 }
+
+/* Editorial Daily Brief Layout */
+.brief-hero {
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+
+.brief-headline {
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.45;
+  color: var(--fg);
+  margin: 0;
+}
+
+.sentiment-meter {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  max-width: 240px;
+}
+
+.sentiment-seg {
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--border);
+  transition: background-color 0.2s ease;
+}
+
+.brief-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 820px) {
+  .brief-kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.brief-kpi-item {
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+
+.brief-kpi-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.brief-kpi-val {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--fg);
+}
+
+.brief-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.brief-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.brief-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  margin-top: 8px;
+  flex-shrink: 0;
+  background-color: var(--primary);
+}
+
+.brief-bullet-warn {
+  background-color: var(--warning);
+}
+
+.brief-bullet-ok {
+  background-color: var(--success);
+}
+
+.brief-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: var(--secondary);
+  color: var(--fg);
+  margin-right: 4px;
+}
+
+/* Safe Markdown formatting inside AI Assistant messages */
+.ai-md h4 {
+  font-size: 13px;
+  font-weight: 650;
+  margin: 8px 0 4px;
+  color: var(--fg);
+}
+
+.ai-md p {
+  margin: 0 0 6px;
+}
+
+.ai-md p:last-child {
+  margin-bottom: 0;
+}
+
+.ai-md ul, .ai-md ol {
+  margin: 4px 0 8px;
+  padding-left: 18px;
+}
+
+.ai-md li + li {
+  margin-top: 4px;
+}
+
+.ai-md code {
+  background-color: var(--secondary);
+  padding: 1px 4px;
+  border-radius: 4px;
+}

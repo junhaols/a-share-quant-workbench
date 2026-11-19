@@ -131,31 +131,56 @@
 
       <!-- ==================== TAB 2: DAILY MARKET & AI BRIEF ==================== -->
       <section id="tab-daily" class="tab-panel stack-md hidden">
-        <!-- AI Post-Market Quant Brief -->
-        <div class="card stack-sm">
+        <!-- AI Post-Market Quant Brief (Editorial Scannable Layout) -->
+        <div class="card stack-md">
           <div class="flex-between">
             <div>
               <h2>盘后 AI 投研与风控简报</h2>
               <p id="daily-brief-meta" class="text-xs text-muted" style="margin-top:2px;">每日 A股/美股收盘后由 GitHub Actions 自动刷新</p>
             </div>
             <div class="actions-row">
-              <span id="daily-sentiment-pill" class="sentiment-pill">情绪评分：0</span>
-              <button id="btn-ask-ai-daily" type="button" class="btn btn-secondary">让 AI 深度解读今日行情</button>
+              <button id="btn-copy-brief-md" type="button" class="btn">复制 Markdown</button>
+              <button id="btn-save-brief-note" type="button" class="btn">存入学习笔记</button>
+              <button id="btn-ask-ai-daily" type="button" class="btn btn-primary">AI 深度解读</button>
             </div>
           </div>
-          <p id="daily-brief-summary" class="text-xs" style="line-height:1.7;"></p>
+
+          <!-- Hero Headline + 5-Segment Sentiment Meter -->
+          <div class="brief-hero stack-sm">
+            <div class="flex-between">
+              <span id="daily-regime-badge" class="badge">定调加载中...</span>
+              <div class="stack-sm" style="min-width:190px;">
+                <div class="flex-between text-xs">
+                  <span class="text-muted">市场情绪温度</span>
+                  <span id="daily-sentiment-pill" class="font-mono font-semibold">0 / 2</span>
+                </div>
+                <div id="daily-sentiment-meter" class="sentiment-meter" aria-label="市场情绪温度计"></div>
+              </div>
+            </div>
+            <h3 id="daily-brief-headline" class="brief-headline">正在加载今日盘后核心结论...</h3>
+            <p id="daily-brief-summary" class="text-xs text-muted" style="line-height:1.65;"></p>
+          </div>
+
+          <!-- 4 Key Metric Pills -->
+          <div id="daily-brief-kpis" class="brief-kpi-grid"></div>
+
+          <!-- Per-Market Structured Breakdown -->
+          <div id="daily-brief-markets" class="grid-2"></div>
+
+          <!-- Risk Alerts & Discipline Actions -->
           <div class="grid-2">
             <div class="subcard stack-sm">
-              <h4 style="color:var(--warning);">风险提示</h4>
-              <ul id="daily-brief-risks" class="diagnosis-list"></ul>
+              <h4 style="color:var(--warning);">重点风险预警</h4>
+              <ul id="daily-brief-risks" class="brief-list"></ul>
             </div>
             <div class="subcard stack-sm">
-              <h4 style="color:var(--success);">学习者纪律与观察建议</h4>
-              <ul id="daily-brief-actions" class="diagnosis-list"></ul>
+              <h4 style="color:var(--success);">学习者纪律与观察清单</h4>
+              <ul id="daily-brief-actions" class="brief-list"></ul>
             </div>
           </div>
+
           <details class="subcard">
-            <summary class="text-xs font-semibold" style="cursor:pointer;">查看近 30 天历史 AI 盘后简报沉淀</summary>
+            <summary class="text-xs font-semibold" style="cursor:pointer;">查看近 30 天历史 AI 盘后简报归档</summary>
             <div id="daily-brief-history" class="stack-sm scroll-box" style="margin-top:8px;"></div>
           </details>
         </div>

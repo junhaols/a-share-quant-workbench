@@ -28,6 +28,49 @@ function escapeHtml(str) {
   }[s]));
 }
 
+function renderSafeMarkdown(rawText) {
+  const escaped = escapeHtml(rawText);
+  const inlineFmt = (s) =>
+    s
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+
+  const lines = escaped.split(/\r?\n/);
+  let html = "";
+  let inUl = false;
+  let inOl = false;
+
+  const closeLists = () => {
+    if (inUl) { html += "</ul>"; inUl = false; }
+    if (inOl) { html += "</ol>"; inOl = false; }
+  };
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) {
+      closeLists();
+      continue;
+    }
+    if (/^#{1,4}\s+/.test(t)) {
+      closeLists();
+      html += `<h4>${inlineFmt(t.replace(/^#{1,4}\s+/, ""))}</h4>`;
+    } else if (/^[-*•]\s+/.test(t)) {
+      if (inOl) { html += "</ol>"; inOl = false; }
+      if (!inUl) { html += "<ul>"; inUl = true; }
+      html += `<li>${inlineFmt(t.replace(/^[-*•]\s+/, ""))}</li>`;
+    } else if (/^\d+[.)]\s+/.test(t)) {
+      if (inUl) { html += "</ul>"; inUl = false; }
+      if (!inOl) { html += "<ol>"; inOl = true; }
+      html += `<li>${inlineFmt(t.replace(/^\d+[.)]\s+/, ""))}</li>`;
+    } else {
+      closeLists();
+      html += `<p>${inlineFmt(t)}</p>`;
+    }
+  }
+  closeLists();
+  return html || "<p></p>";
+}
+
 export function initAiAssistant({ getContextSnapshot }) {
   let settings = loadAiSettings();
   let messages = [
@@ -35,7 +78,7 @@ export function initAiAssistant({ getContextSnapshot }) {
       role: "assistant",
       content:
         "你好！我是你的量化投研助手（默认预置 `deepseek-flash` 模型）。\n\n" +
-        "在上方填入你的 API Key（仅保存在当前浏览器 localStorage，绝不上传 GitHub），然后可以点击下方快捷按钮，一键把**当前回测 / Walk-Forward / 每日行情 / 模拟盘数据**发给我做客观诊断与复盘。",
+        "在上方填入你的 API Key（仅保存在当前浏览器 `localStorage`，绝不上传 GitHub），然后可以点击下方快捷按钮，一键把 **当前回测 / Walk-Forward / 每日行情 / 模拟盘数据** 发给我做客观诊断与复盘。",
     },
   ];
 
@@ -84,10 +127,11 @@ export function initAiAssistant({ getContextSnapshot }) {
     chatBox.innerHTML = messages
       .map((m) => {
         const isUser = m.role === "user";
+        const bodyHtml = isUser ? `<div class="ai-msg-body">${escapeHtml(m.content)}</div>` : `<div class="ai-md">${renderSafeMarkdown(m.content)}</div>`;
         return `
           <div class="ai-msg ${isUser ? "ai-msg-user" : "ai-msg-bot"}">
             <div class="ai-msg-role">${isUser ? "你" : `AI 量化助手 (${escapeHtml(settings.model)})`}</div>
-            <div class="ai-msg-body">${escapeHtml(m.content)}</div>
+            ${bodyHtml}
           </div>`;
       })
       .join("");

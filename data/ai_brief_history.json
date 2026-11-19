@@ -2,17 +2,50 @@
   {
     "date": "2026-11-18",
     "source": "rule_based_quant_engine",
-    "model": "rule-fallback (未配置 GitHub Secret LLM_API_KEY)",
-    "generated_at_utc": "2026-11-19T17:00:26.875508+00:00",
-    "sentiment_score": -1,
-    "regime": "结构分化 / 规则监控",
-    "summary": "A股市场 (CN)（截至 2026-11-18）：1/6 只进攻标的 20 日动量为正；领涨 红利ETF(+1.51%)，最弱 创业板ETF(-14.19%)。",
+    "model": "规则量化引擎 (配置 LLM_API_KEY 后自动切 deepseek-flash)",
+    "generated_at_utc": "2026-11-19T17:13:04.039793+00:00",
+    "sentiment_score": -2,
+    "regime": "偏弱防御",
+    "headline": "A股市场偏弱防御：红利ETF领跑，信号指向「红利ETF 50% + 国债ETF 50%」",
+    "summary": "动量广度：1/6 只进攻标的 20 日动量为正，整体处于「偏弱防御」格局。 强弱分化：领涨 红利ETF（20日 +1.51% / 今日 +0.59%），最弱 创业板ETF（20日 -14.19%）。",
+    "key_metrics": [
+      {
+        "label": "正动量广度",
+        "value": "1 / 6"
+      },
+      {
+        "label": "20日领涨",
+        "value": "红利ETF +1.51%"
+      },
+      {
+        "label": "20日最弱",
+        "value": "创业板ETF -14.19%"
+      },
+      {
+        "label": "当前参考信号",
+        "value": "红利ETF 50% + 国债ETF 50%"
+      }
+    ],
+    "market_sections": [
+      {
+        "market": "A股市场 (CN)",
+        "as_of": "2026-11-18",
+        "status": "偏弱防御",
+        "points": [
+          "动量广度：1/6 只进攻标的 20 日动量为正，整体处于「偏弱防御」格局。",
+          "强弱分化：领涨 红利ETF（20日 +1.51% / 今日 +0.59%），最弱 创业板ETF（20日 -14.19%）。",
+          "模型信号：按月度动量+避险规则，当前参考组合为「红利ETF 50% + 国债ETF 50%」。"
+        ]
+      }
+    ],
     "risk_alerts": [
-      "A股市场 (CN)波动偏高标的：纳指ETF(26.2%)、中证500ETF(34.3%)，注意仓位控制与滑点。"
+      "【高波动提醒】A股市场 (CN)中 创业板ETF(波动51.4%)、中证500ETF(波动34.3%) 20 日年化波动偏高，注意控制单标的仓位与滑点。",
+      "【趋势偏弱】A股市场 (CN)多数进攻型 ETF 位于 20 日均线下方，宜依靠避险资产控制回撤，避免盲目抄底。"
     ],
     "action_notes": [
-      "学习阶段仅作模拟盘观察记录，严禁因单日涨跌情绪化追单。",
-      "在 GitHub 仓库 Settings -> Secrets 配置 LLM_API_KEY（及可选 LLM_BASE_URL、LLM_MODEL=deepseek-flash）后，每日盘后将自动切换为大模型投研简报。"
+      "纪律优先：学习阶段仅做模拟盘记录与复盘，不因单日涨跌临时更改调仓周期。",
+      "成本意识：若调仓仅涉及微小权重变化，10 万以内资金应避免触发无意义的最低 ¥5 佣金。",
+      "接入大模型：在仓库 Settings → Secrets 添加 LLM_API_KEY 后，盘后简报将自动由 deepseek-flash 生成。"
     ]
   }
 ]

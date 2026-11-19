@@ -380,30 +380,122 @@ function buildFallbackDailyMarket(marketId) {
   };
 }
 
+function formatTaggedLine(raw) {
+  const esc = escapeHtml(raw);
+  return esc.replace(/^【([^】]+)】\s*/, '<span class="brief-tag">$1</span>');
+}
+
+function buildBriefMarkdownText(brief, snapMarket) {
+  if (!brief) return "";
+  const dt = snapMarket?.as_of_date || (brief.generated_at_utc || "").slice(0, 10);
+  const lines = [
+    `# 盘后量化投研简报 (${dt})`,
+    "",
+    `- **市场定调**：${brief.regime || "中性观察"}（情绪评分 ${brief.sentiment_score > 0 ? "+" : ""}${brief.sentiment_score ?? 0} / 2）`,
+    `- **核心结论**：${brief.headline || brief.summary || ""}`,
+    `- **来源模型**：${brief.model || brief.source || ""}`,
+    "",
+  ];
+  if (Array.isArray(brief.key_metrics) && brief.key_metrics.length) {
+    lines.push("## 关键指标", ...brief.key_metrics.map((k) => `- **${k.label}**：${k.value}`), "");
+  }
+  if (Array.isArray(brief.market_sections) && brief.market_sections.length) {
+    lines.push("## 分市场观察");
+    for (const sec of brief.market_sections) {
+      lines.push(`### ${sec.market}（${sec.status || ""}）`);
+      for (const pt of sec.points || []) lines.push(`- ${pt}`);
+      lines.push("");
+    }
+  }
+  if (Array.isArray(brief.risk_alerts) && brief.risk_alerts.length) {
+    lines.push("## 重点风险预警", ...brief.risk_alerts.map((r) => `- ${r}`), "");
+  }
+  if (Array.isArray(brief.action_notes) && brief.action_notes.length) {
+    lines.push("## 学习者纪律与观察清单", ...brief.action_notes.map((a, i) => `${i + 1}. ${a}`), "");
+  }
+  return lines.join("\n");
+}
+
 function renderDailyTab() {
   const cfg = getActiveCfg();
   const snapMarket = dailySnapshotData?.markets?.[state.activeMarket] || buildFallbackDailyMarket(state.activeMarket);
   const brief = dailySnapshotData?.ai_brief;
 
-  // Render AI Brief
   const pill = document.getElementById("daily-sentiment-pill");
+  const meter = document.getElementById("daily-sentiment-meter");
+  const regimeBadge = document.getElementById("daily-regime-badge");
+  const headlineEl = document.getElementById("daily-brief-headline");
+  const summaryEl = document.getElementById("daily-brief-summary");
+  const kpisEl = document.getElementById("daily-brief-kpis");
+  const marketsEl = document.getElementById("daily-brief-markets");
+
   if (brief) {
-    const sc = Number(brief.sentiment_score || 0);
+    const sc = Math.max(-2, Math.min(2, Number(brief.sentiment_score || 0)));
+    const labels = { "-2": "极度谨慎", "-1": "偏谨慎", "0": "中性观望", "1": "偏积极", "2": "强势偏多" };
     const scColor = sc > 0 ? "var(--success)" : sc < 0 ? "var(--error)" : "var(--muted)";
-    pill.textContent = `情绪评分 ${sc > 0 ? "+" : ""}${sc} / 2 · ${brief.regime || "中性"}`;
+    pill.textContent = `${sc > 0 ? "+" : ""}${sc} · ${labels[String(sc)] || "中性"}`;
     pill.style.color = scColor;
+    regimeBadge.textContent = `今日定调：${brief.regime || "中性观察"}`;
+
+    // 5-segment sentiment meter (-2, -1, 0, +1, +2)
+    const activeIdx = sc + 2;
+    const segColors = ["#dc2626", "#f59e0b", "#64748b", "#10b981", "#059669"];
+    meter.innerHTML = [0, 1, 2, 3, 4]
+      .map((i) => `<span class="sentiment-seg" style="background:${i <= activeIdx ? segColors[activeIdx] : "var(--border)"};"></span>`)
+      .join("");
+
     document.getElementById("daily-brief-meta").textContent =
-      `模型来源：${brief.model || brief.source} | 更新时间：${(brief.generated_at_utc || "").slice(0, 16).replace("T", " ")} UTC`;
-    document.getElementById("daily-brief-summary").textContent = brief.summary || "";
+      `数据日期：${snapMarket.as_of_date} | 生成引擎：${brief.model || brief.source} | 更新于 ${(brief.generated_at_utc || "").slice(0, 16).replace("T", " ")} UTC`;
+    headlineEl.textContent = brief.headline || brief.summary || "今日盘后量化简报";
+    summaryEl.textContent = brief.headline && brief.summary && brief.summary !== brief.headline ? brief.summary : "";
+
+    const kpis = Array.isArray(brief.key_metrics) && brief.key_metrics.length
+      ? brief.key_metrics
+      : [
+          { label: "数据截止", value: snapMarket.as_of_date },
+          { label: "情绪评分", value: `${sc > 0 ? "+" : ""}${sc} / 2` },
+        ];
+    kpisEl.innerHTML = kpis
+      .map(
+        (k) => `
+        <div class="brief-kpi-item">
+          <div class="brief-kpi-label">${escapeHtml(k.label)}</div>
+          <div class="brief-kpi-val">${escapeHtml(k.value)}</div>
+        </div>`
+      )
+      .join("");
+
+    const sections = Array.isArray(brief.market_sections) ? brief.market_sections : [];
+    marketsEl.classList.toggle("hidden", sections.length === 0);
+    marketsEl.innerHTML = sections
+      .map(
+        (sec) => `
+        <div class="subcard stack-sm">
+          <div class="flex-between">
+            <h4>${escapeHtml(sec.market || "")}</h4>
+            <span class="badge">${escapeHtml(sec.status || "")}</span>
+          </div>
+          <ul class="brief-list">
+            ${(sec.points || [])
+              .map((pt) => `<li><span class="brief-bullet"></span><span>${formatTaggedLine(pt)}</span></li>`)
+              .join("")}
+          </ul>
+        </div>`
+      )
+      .join("");
+
     document.getElementById("daily-brief-risks").innerHTML = (brief.risk_alerts || [])
-      .map((x) => `<li>${escapeHtml(x)}</li>`)
+      .map((x) => `<li><span class="brief-bullet brief-bullet-warn"></span><span>${formatTaggedLine(x)}</span></li>`)
       .join("");
     document.getElementById("daily-brief-actions").innerHTML = (brief.action_notes || [])
-      .map((x) => `<li>${escapeHtml(x)}</li>`)
+      .map((x) => `<li><span class="brief-bullet brief-bullet-ok"></span><span>${formatTaggedLine(x)}</span></li>`)
       .join("");
   } else {
     pill.textContent = "等待首次自动简报";
-    document.getElementById("daily-brief-summary").textContent = "暂无已同步的盘后简报，请触发 GitHub Actions Daily Update。";
+    headlineEl.textContent = "暂无已同步的盘后简报，请触发 GitHub Actions Daily Update。";
+    summaryEl.textContent = "";
+    kpisEl.innerHTML = "";
+    marketsEl.innerHTML = "";
   }
 
   // History archive
@@ -417,6 +509,7 @@ function renderDailyTab() {
             <span class="font-mono font-semibold">${escapeHtml(h.date || "")} · ${escapeHtml(h.regime || "")}</span>
             <span class="badge">${escapeHtml(h.model || h.source || "")} · 评分 ${h.sentiment_score > 0 ? "+" : ""}${h.sentiment_score}</span>
           </div>
+          <div class="font-semibold">${escapeHtml(h.headline || "")}</div>
           <p class="text-muted">${escapeHtml(h.summary || "")}</p>
         </div>`
         )
@@ -1171,6 +1264,45 @@ function bindEvents() {
   document.getElementById("btn-goto-journal").addEventListener("click", () => switchTab("journal"));
   document.getElementById("btn-ask-ai-daily").addEventListener("click", () => {
     document.getElementById("btn-open-ai").click();
+  });
+
+  document.getElementById("btn-copy-brief-md").addEventListener("click", async (e) => {
+    const brief = dailySnapshotData?.ai_brief;
+    const snapMarket = dailySnapshotData?.markets?.[state.activeMarket];
+    const md = buildBriefMarkdownText(brief, snapMarket);
+    if (!md) return;
+    try {
+      await navigator.clipboard.writeText(md);
+      e.target.textContent = "已复制 Markdown ✓";
+      setTimeout(() => {
+        e.target.textContent = "复制 Markdown";
+      }, 1800);
+    } catch (_) {
+      downloadText(`quant_brief_${snapMarket?.as_of_date || "latest"}.md`, md, "text/markdown");
+    }
+  });
+
+  document.getElementById("btn-save-brief-note").addEventListener("click", (e) => {
+    const brief = dailySnapshotData?.ai_brief;
+    const snapMarket = dailySnapshotData?.markets?.[state.activeMarket];
+    if (!brief) return;
+    const dt = snapMarket?.as_of_date || new Date().toISOString().slice(0, 10);
+    const md = buildBriefMarkdownText(brief, snapMarket);
+    state.notes.unshift({
+      id: "n_brief_" + Date.now(),
+      date: dt,
+      market: getActiveCfg().shortName,
+      tag: "回测复盘",
+      title: `盘后简报归档 · ${brief.headline || brief.regime || dt}`,
+      body: md,
+    });
+    saveState();
+    renderNotes();
+    renderOverview();
+    e.target.textContent = "已存入笔记 ✓";
+    setTimeout(() => {
+      e.target.textContent = "存入学习笔记";
+    }, 1800);
   });
 
   ["ctrl-cash", "ctrl-rebal", "ctrl-comm", "ctrl-mincomm", "ctrl-lookahead"].forEach((id) => {
