@@ -1,0 +1,89 @@
+{
+  "lesson": "lesson01_a_share_etf_basics",
+  "generated_at_utc": "2026-11-19T16:06:45.914318+00:00",
+  "date_range": [
+    "2018-01-02",
+    "2026-11-18"
+  ],
+  "trading_days": 2151,
+  "params": {
+    "initial_cash": 80000,
+    "commission_rate": 0.00025,
+    "min_commission": 5.0,
+    "slippage_rate": 0.0005
+  },
+  "strategies": {
+    "S1_沪深300买入持有": {
+      "initial_cash": 80000,
+      "final_equity": 91810.39,
+      "total_return_pct": 14.76,
+      "cagr_pct": 1.56,
+      "ann_vol_pct": 19.41,
+      "sharpe": -0.02,
+      "max_drawdown_pct": -41.98,
+      "calmar": 0.04,
+      "trade_count": 1,
+      "total_commission": 19.87,
+      "total_slippage": 39.72,
+      "cost_ratio_pct": 0.07
+    },
+    "S2_股债金全天候平衡": {
+      "initial_cash": 80000,
+      "final_equity": 143735.15,
+      "total_return_pct": 79.67,
+      "cagr_pct": 6.82,
+      "ann_vol_pct": 8.06,
+      "sharpe": 0.6,
+      "max_drawdown_pct": -9.39,
+      "calmar": 0.73,
+      "trade_count": 136,
+      "total_commission": 682.98,
+      "total_slippage": 129.69,
+      "cost_ratio_pct": 1.02
+    },
+    "S3_ETF月度动量轮动": {
+      "initial_cash": 80000,
+      "final_equity": 184470.64,
+      "total_return_pct": 130.59,
+      "cagr_pct": 9.87,
+      "ann_vol_pct": 19.25,
+      "sharpe": 0.41,
+      "max_drawdown_pct": -25.14,
+      "calmar": 0.39,
+      "trade_count": 356,
+      "total_commission": 4707.35,
+      "total_slippage": 8888.54,
+      "cost_ratio_pct": 16.99
+    }
+  },
+  "pitfalls": {
+    "lookahead_bias": {
+      "initial_cash": 80000,
+      "final_equity": 171260.8,
+      "total_return_pct": 114.08,
+      "cagr_pct": 8.95,
+      "ann_vol_pct": 19.14,
+      "sharpe": 0.36,
+      "max_drawdown_pct": -24.14,
+      "calmar": 0.37,
+      "trade_count": 358,
+      "total_commission": 4457.04,
+      "total_slippage": 8363.93,
+      "cost_ratio_pct": 16.03
+    },
+    "high_freq_cost": {
+      "initial_cash": 80000,
+      "final_equity": 242569.32,
+      "total_return_pct": 203.21,
+      "cagr_pct": 13.31,
+      "ann_vol_pct": 20.13,
+      "sharpe": 0.56,
+      "max_drawdown_pct": -23.35,
+      "calmar": 0.57,
+      "trade_count": 2099,
+      "total_commission": 21104.9,
+      "total_slippage": 31078.2,
+      "cost_ratio_pct": 65.23
+    }
+  }
+}

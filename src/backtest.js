@@ -1,9 +1,15 @@
-export function runBacktest(market, { weightsByDay, initialCash, commRate, minComm, slippageRate, lookahead }) {
+export function runBacktest(
+  market,
+  { weightsByDay, initialCash, commRate, minComm, slippageRate, lookahead, lotSize = 100 }
+) {
   const { dates, codes, open, close } = market;
   const n = dates.length;
+  const stepLot = Math.max(1, Number(lotSize) || 1);
   let cash = initialCash;
   const shares = {};
-  codes.forEach((c) => { shares[c] = 0; });
+  codes.forEach((c) => {
+    shares[c] = 0;
+  });
 
   let totalComm = 0;
   let totalSlip = 0;
@@ -29,8 +35,8 @@ export function runBacktest(market, { weightsByDay, initialCash, commRate, minCo
           targetShares[c] = 0;
         } else {
           const budget = portVal * w * (1 - commRate - slippageRate - 0.002);
-          const lots = Math.floor(budget / (p * 100));
-          targetShares[c] = Math.max(0, lots * 100);
+          const lots = Math.floor(budget / (p * stepLot));
+          targetShares[c] = Math.max(0, lots * stepLot);
         }
       }
 
@@ -42,7 +48,7 @@ export function runBacktest(market, { weightsByDay, initialCash, commRate, minCo
           const rawP = execPxMap[c][i];
           const fillP = rawP * (1 - slippageRate);
           const gross = qty * fillP;
-          const comm = Math.max(minComm, gross * commRate);
+          const comm = commRate === 0 && minComm === 0 ? 0 : Math.max(minComm, gross * commRate);
           cash += gross - comm;
           shares[c] -= qty;
           totalComm += comm;
@@ -51,17 +57,17 @@ export function runBacktest(market, { weightsByDay, initialCash, commRate, minCo
         }
       }
 
-      // Buy next in 100-share lots
+      // Buy next in market lotSize multiples (100 for CN/HK, 1 for US)
       for (const c of codes) {
         const diff = targetShares[c] - shares[c];
         if (diff > 0) {
           const rawP = execPxMap[c][i];
           const fillP = rawP * (1 + slippageRate);
-          const maxLots = Math.floor(Math.max(0, cash - minComm) / (fillP * 100 * (1 + commRate)));
-          const qty = Math.min(diff, maxLots * 100);
+          const maxLots = Math.floor(Math.max(0, cash - minComm) / (fillP * stepLot * (1 + commRate)));
+          const qty = Math.min(diff, maxLots * stepLot);
           if (qty > 0) {
             const gross = qty * fillP;
-            const comm = Math.max(minComm, gross * commRate);
+            const comm = commRate === 0 && minComm === 0 ? 0 : Math.max(minComm, gross * commRate);
             if (cash >= gross + comm) {
               cash -= gross + comm;
               shares[c] += qty;
@@ -81,7 +87,7 @@ export function runBacktest(market, { weightsByDay, initialCash, commRate, minCo
     drawdown[i] = (eq / peak - 1) * 100;
   }
 
-  const years = n / 244;
+  const years = Math.max(n / 244, 0.25);
   const finalEq = equity[n - 1];
   const totalRet = (finalEq / initialCash - 1) * 100;
   const cagr = (Math.pow(finalEq / initialCash, 1 / years) - 1) * 100;
@@ -93,8 +99,8 @@ export function runBacktest(market, { weightsByDay, initialCash, commRate, minCo
     sumR += r;
     sumR2 += r * r;
   }
-  const meanR = sumR / (n - 1);
-  const varR = Math.max(0, sumR2 / (n - 1) - meanR * meanR);
+  const meanR = sumR / Math.max(1, n - 1);
+  const varR = Math.max(0, sumR2 / Math.max(1, n - 1) - meanR * meanR);
   const annVol = Math.sqrt(varR * 244) * 100;
   const sharpe = annVol > 1e-6 ? (cagr - 2.0) / annVol : 0;
   let maxDd = 0;
@@ -117,21 +123,23 @@ export function runBacktest(market, { weightsByDay, initialCash, commRate, minCo
   };
 }
 
-export function buildStrategyWeights(market, rebalEvery) {
+export function buildStrategyWeights(market, marketCfg, rebalEvery) {
   const { dates, codes, close } = market;
   const n = dates.length;
-  const riskCodes = codes.filter((c) => c !== "511010");
+  const bench = marketCfg.benchmarkCode;
+  const safe = marketCfg.safeCode;
+  const riskCodes = codes.filter((c) => c !== safe);
 
-  // S1: Buy & Hold CSI300
+  // S1: Buy & Hold benchmark
   const w1 = new Array(n).fill(null);
-  w1[0] = { "510300": 1.0 };
+  w1[0] = { [bench]: 1.0 };
 
   // S2: All-Weather quarterly rebalance
   const w2 = new Array(n).fill(null);
-  const aw = { "511010": 0.40, "510300": 0.20, "510880": 0.15, "513100": 0.15, "518880": 0.10 };
+  const aw = marketCfg.allWeatherWeights;
   for (let i = 0; i < n; i += 60) w2[i] = aw;
 
-  // S3: Momentum top 2 + China 5Y Bond safety filter
+  // S3: Momentum top 2 + safe-asset switch
   const w3 = new Array(n).fill(null);
   const lb = 20;
   for (let i = lb; i < n; i += rebalEvery) {
@@ -140,15 +148,15 @@ export function buildStrategyWeights(market, rebalEvery) {
       .sort((a, b) => b.mom - a.mom);
     const row = {};
     for (const item of scored.slice(0, 2)) {
-      const target = item.mom > 0 ? item.code : "511010";
+      const target = item.mom > 0 ? item.code : safe;
       row[target] = (row[target] || 0) + 0.5;
     }
     w3[i] = row;
   }
 
   return [
-    { key: "S1", name: "S1 沪深300买入持有", weights: w1, colorVar: "--chart-1" },
-    { key: "S2", name: "S2 股债金全天候平衡", weights: w2, colorVar: "--chart-2" },
-    { key: "S3", name: "S3 ETF动量+国债避险", weights: w3, colorVar: "--chart-3" },
+    { key: "S1", name: `S1 ${marketCfg.benchmarkName} 买入持有`, weights: w1, colorVar: "--chart-1" },
+    { key: "S2", name: "S2 多资产全天候平衡", weights: w2, colorVar: "--chart-2" },
+    { key: "S3", name: `S3 动量轮动 + ${marketCfg.safeName}避险`, weights: w3, colorVar: "--chart-3" },
   ];
 }

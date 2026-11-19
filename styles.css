@@ -549,3 +549,69 @@ canvas.chart-canvas {
   color: var(--muted);
   padding-top: 6px;
 }
+
+/* Multi-market Switcher & Overview Cards */
+.market-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.market-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.market-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background-color: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.market-pill:hover {
+  color: var(--fg);
+  border-color: var(--border-strong);
+}
+
+.market-pill[aria-pressed="true"] {
+  background-color: var(--fg);
+  color: var(--card);
+  border-color: var(--fg);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.market-overview-card {
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.market-overview-card:hover {
+  border-color: var(--border-strong);
+}
+
+.market-overview-card.is-selected {
+  border-color: var(--primary);
+}

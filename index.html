@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>A股量化学习与投研工作台 · QuantLab</title>
-  <meta name="description" content="个人 A 股量化学习与投研工作台：10 万以内 ETF 回测与避坑沙盒、4 阶段学习路线、东方财富模拟盘日志与开源资料库。" />
+  <title>QuantLab · 多市场个人量化学习与投研工作台</title>
+  <meta name="description" content="通用多市场个人金融量化学习与投研工作台：支持 A 股、美股、港股与跨市场回测沙盒、Colab GPU 数据联动、成长路径笔记与多市场模拟盘日志。" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
   <div class="container stack-lg">
 
-    <!-- Header -->
+    <!-- Top Header -->
     <header class="card app-header">
       <div class="stack-sm">
         <div class="title-row">
-          <h1>A 股量化学习与投研工作台</h1>
-          <span class="badge">10 万以内起步 · 东方财富 + Colab</span>
-          <span id="data-mode-badge" class="badge badge-muted">内置教学行情（可导入 Colab 真实 JSON）</span>
+          <h1>QuantLab · 多市场量化学习与投研工作台</h1>
+          <span class="badge">A股 · 美股 · 港股/全球</span>
+          <span id="data-mode-badge" class="badge badge-muted">加载市场数据中...</span>
         </div>
         <p class="text-xs text-muted">
-          边学边沉淀数据、回测与复盘笔记。所有记录自动保存在浏览器，并支持导出 JSON 备份至 Google Drive (<code>Antigravity/01_Projects/quant_lab/</code>)。
+          通用量化投研底座 + Google Colab Pro+ 算力联动。笔记、进度与模拟盘数据存于本地浏览器，支持一键导出 JSON 备份至 Google Drive (<code>Antigravity/01_Projects/quant_lab/</code>)。
         </p>
       </div>
       <div class="actions-row">
@@ -36,31 +36,113 @@
       </div>
     </header>
 
-    <!-- Navigation -->
+    <!-- Global Market Switcher Bar -->
+    <div class="market-bar">
+      <div class="flex-inline" style="flex-wrap:wrap; gap:10px;">
+        <span class="text-xs font-semibold text-muted">当前市场工作区：</span>
+        <div id="market-switcher" class="market-pills" role="group" aria-label="切换市场"></div>
+      </div>
+      <div id="active-market-rule-chip" class="text-xs text-muted"></div>
+    </div>
+
+    <!-- Primary Tabs -->
     <nav class="tabs-nav" role="tablist" aria-label="工作台模块">
-      <button class="tab-btn" role="tab" aria-selected="true" data-tab="sandbox">1. 回测与避坑沙盒</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="learn">2. 学习路线与知识笔记</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="journal">3. 东方财富模拟盘日志</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="resources">4. ETF 档案与开源资料库</button>
+      <button class="tab-btn" role="tab" aria-selected="true" data-tab="overview">1. 多市场总览</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="sandbox">2. 通用回测与避坑沙盒</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="learn">3. 成长路线与知识笔记</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="journal">4. 多市场模拟盘日志</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="resources">5. 标的档案与开源生态</button>
     </nav>
 
-    <!-- TAB 1: BACKTEST SANDBOX -->
     <main>
-      <section id="tab-sandbox" class="tab-panel stack-md">
-        <!-- Imported Colab Report -->
-        <div id="colab-import-panel" class="card stack-sm hidden">
-          <div class="flex-between">
-            <div>
-              <h2>Colab 真实回测报告 (<span id="colab-date-range" class="font-mono text-xs text-muted"></span>)</h2>
-              <p id="colab-meta-line" class="text-xs text-muted" style="margin-top:4px;"></p>
+      <!-- ==================== TAB 1: MULTI-MARKET OVERVIEW ==================== -->
+      <section id="tab-overview" class="tab-panel stack-md">
+        <!-- Market Cards -->
+        <div id="overview-market-cards" class="grid-3"></div>
+
+        <!-- Latest Synced Colab Real Backtest Snapshot + System Status -->
+        <div class="grid-split-2-1">
+          <div class="card stack-sm">
+            <div class="flex-between">
+              <div>
+                <h2 id="overview-colab-title">当前市场 Colab 真实回测快照</h2>
+                <p id="overview-colab-meta" class="text-xs text-muted" style="margin-top:2px;"></p>
+              </div>
+              <button id="btn-goto-sandbox" type="button" class="btn btn-primary">进入实时沙盒深度调节</button>
             </div>
-            <button id="btn-clear-colab" type="button" class="btn">关闭真实报告面板</button>
+            <div id="overview-colab-body"></div>
+          </div>
+
+          <div class="card stack-sm">
+            <h3>云端算力与个人学习状态</h3>
+            <div class="subcard stack-sm text-xs">
+              <div class="flex-between">
+                <span class="font-semibold">Colab Pro+ GPU 工作台</span>
+                <span class="badge" style="color:var(--success);">已联调通过</span>
+              </div>
+              <p class="text-muted">实测节点：NVIDIA L4 (23 GB VRAM · 53 GB RAM · CUDA 13.0)，任务队列与结果回传 Drive 链路畅通。</p>
+            </div>
+            <div class="subcard stack-sm text-xs">
+              <div class="flex-between">
+                <span class="font-semibold">整体学习进度</span>
+                <span id="overview-learn-pct" class="font-mono font-semibold tabular-nums">0%</span>
+              </div>
+              <div class="progress-track">
+                <div id="overview-learn-bar" class="progress-fill" style="width:0%;"></div>
+              </div>
+              <p class="text-muted" id="overview-notes-count"></p>
+            </div>
+            <div class="subcard stack-sm text-xs">
+              <div class="flex-between">
+                <span class="font-semibold">模拟盘记录概览</span>
+                <button id="btn-goto-journal" type="button" class="btn-ghost" style="padding:0;">打开日志 →</button>
+              </div>
+              <p class="text-muted" id="overview-journal-summary"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cross-Market Rules Comparison Matrix -->
+        <div class="card stack-sm">
+          <div class="flex-between">
+            <h3>跨市场量化规则对照表（入门必备）</h3>
+            <span class="text-xs text-muted">切换顶部市场后，沙盒手数、货币、佣金模型与标的池会自动适配对应规则</span>
           </div>
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>策略 / 实验组</th>
+                  <th>市场</th>
+                  <th>计价货币</th>
+                  <th>最小单位</th>
+                  <th>交易与涨跌停规则</th>
+                  <th>税费特点</th>
+                  <th>免费 / 进阶数据源</th>
+                  <th>常见交易通道</th>
+                </tr>
+              </thead>
+              <tbody id="overview-rules-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 2: UNIVERSAL BACKTEST SANDBOX ==================== -->
+      <section id="tab-sandbox" class="tab-panel stack-md hidden">
+        <!-- Synced Colab Report Panel -->
+        <div id="colab-import-panel" class="card stack-sm hidden">
+          <div class="flex-between">
+            <div>
+              <h2 id="colab-report-heading">Colab 真实回测报告 (<span id="colab-date-range" class="font-mono text-xs text-muted"></span>)</h2>
+              <p id="colab-meta-line" class="text-xs text-muted" style="margin-top:4px;"></p>
+            </div>
+            <button id="btn-clear-colab" type="button" class="btn">隐藏真实报告</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>策略 / 避坑实验组</th>
                   <th class="text-right">期末资金</th>
                   <th class="text-right">年化收益</th>
                   <th class="text-right">最大回撤</th>
@@ -72,13 +154,17 @@
               <tbody id="colab-metrics-tbody" class="tabular-nums"></tbody>
             </table>
           </div>
+          <details id="colab-chart-details" class="subcard">
+            <summary class="text-xs font-semibold" style="cursor:pointer;">展开查看 Colab 生成的高清净值与回撤对比图</summary>
+            <img id="colab-chart-img" src="" alt="Colab 真实回测策略对比图" style="width:100%; height:auto; border-radius:8px; margin-top:10px; display:block;" />
+          </details>
         </div>
 
-        <!-- Controls -->
+        <!-- Sandbox Controls -->
         <div class="card stack-md">
           <div class="flex-between">
-            <h2>10 万以内 ETF 实时交互沙盒</h2>
-            <span class="text-xs text-muted">拖动滑块或切换避坑开关，实时观察收益、回撤与手续费变化</span>
+            <h2 id="sandbox-heading">实时交互回测沙盒</h2>
+            <span id="sandbox-subtitle" class="text-xs text-muted">拖动滑块或切换避坑开关，实时观察收益、回撤与手续费变化</span>
           </div>
 
           <div class="grid-controls text-xs">
@@ -88,8 +174,8 @@
                 <span id="val-cash" class="font-mono font-semibold tabular-nums">¥80,000</span>
               </div>
               <input id="ctrl-cash" type="range" min="20000" max="100000" step="10000" value="80000" style="width:100%;" />
-              <div class="flex-between text-muted">
-                <span>2万</span><span>5万</span><span>10万</span>
+              <div id="cash-range-labels" class="flex-between text-muted">
+                <span>2万</span><span>6万</span><span>10万</span>
               </div>
             </div>
 
@@ -104,26 +190,22 @@
                 <option value="20" selected>每 20 交易日（月频 · 推荐）</option>
                 <option value="60">每 60 交易日（季频）</option>
               </select>
-              <p class="text-muted">观察换手频率对小资金磨损的影响</p>
+              <p class="text-muted">对比换手频率对交易成本的放大效应</p>
             </div>
 
             <div class="stack-sm">
               <div class="flex-between">
-                <label for="ctrl-comm" class="text-muted">佣金设置（ETF 免印花税）</label>
+                <label for="ctrl-comm" class="text-muted">佣金设置</label>
                 <span id="val-comm" class="font-mono font-semibold tabular-nums">万2.5</span>
               </div>
               <div style="display:flex; gap:8px; align-items:center;">
-                <select id="ctrl-comm" class="select" style="flex:1;">
-                  <option value="0.0001">万1 (0.01%)</option>
-                  <option value="0.00025" selected>万2.5 (0.025% 默认)</option>
-                  <option value="0.0003">万3 (0.03%)</option>
-                </select>
+                <select id="ctrl-comm" class="select" style="flex:1;"></select>
                 <label class="btn" style="padding:6px 10px;">
-                  <input id="ctrl-min5" type="checkbox" checked />
-                  <span>最低5元</span>
+                  <input id="ctrl-mincomm" type="checkbox" checked />
+                  <span id="label-mincomm">最低¥5</span>
                 </label>
               </div>
-              <p class="text-muted">取消勾选可对比“免5”与最低5元差异</p>
+              <p id="sandbox-stamp-note" class="text-muted"></p>
             </div>
 
             <div class="stack-sm">
@@ -135,27 +217,23 @@
                 <span>模拟“偷看收盘价”作弊</span>
                 <input id="ctrl-lookahead" type="checkbox" />
               </label>
-              <p class="text-muted">勾选后改为 T 日收盘成交，体验虚假暴利</p>
+              <p class="text-muted">勾选后改为 T 日收盘成交，体验偏差影响</p>
             </div>
           </div>
         </div>
 
         <!-- Lookahead Warning -->
         <div id="lookahead-warning" class="callout-warning hidden">
-          <strong style="color:var(--warning);">⚠ 未来函数作弊模式已开启：</strong>
-          <span>当前策略错误地使用了「T 日收盘价决策 + T 日收盘价瞬间成交」，实盘中收盘瞬间根本无法成交。对比勾选前后 <strong>S3 ETF动量轮动</strong> 的年化收益差距即可看清陷阱。</span>
+          <strong style="color:var(--warning);">⚠ 未来函数模式已开启：</strong>
+          <span>当前回测错误地使用了「T 日收盘价决策 + T 日收盘价瞬间成交」，实盘中收盘瞬间无法保证成交。关闭该开关即可恢复严谨的 T+1 开盘成交逻辑。</span>
         </div>
 
         <!-- Charts -->
         <div class="card stack-sm">
           <div class="flex-between">
             <div class="flex-inline" style="flex-wrap:wrap; gap:14px;">
-              <span class="text-xs font-semibold">净值曲线与回撤水下对比（8 年多周期，100 股整数倍）</span>
-              <div class="legend-row">
-                <span><span class="dot" style="background:var(--chart-1)"></span>S1 沪深300买入持有</span>
-                <span><span class="dot" style="background:var(--chart-2)"></span>S2 股债金全天候</span>
-                <span><span class="dot" style="background:var(--chart-3)"></span>S3 ETF动量+国债避险</span>
-              </div>
+              <span id="chart-title-line" class="text-xs font-semibold">净值曲线与回撤水下对比</span>
+              <div id="chart-legend-row" class="legend-row"></div>
             </div>
             <div id="chart-hover-readout" class="text-xs font-mono tabular-nums text-muted">悬停图表查看每日净值与回撤</div>
           </div>
@@ -183,9 +261,7 @@
                 <tbody id="sandbox-metrics-tbody" class="tabular-nums"></tbody>
               </table>
             </div>
-            <p class="text-xs text-muted">
-              沙盒内置多周期校准演示行情用于瞬时交互学习；跑完 Colab 第 1 课后，导入 <code>lesson01_summary.json</code> 或提交至仓库 <code>data/latest_lesson01_summary.json</code> 即可查看真实 A 股回测数据。
-            </p>
+            <p id="sandbox-footnote" class="text-xs text-muted"></p>
           </div>
           <div class="card stack-sm">
             <h3>实时诊断与学习要点</h3>
@@ -194,13 +270,13 @@
         </div>
       </section>
 
-      <!-- TAB 2: LEARNING ROADMAP & NOTES -->
+      <!-- ==================== TAB 3: LEARNING ROADMAP & NOTES ==================== -->
       <section id="tab-learn" class="tab-panel stack-md hidden">
         <div class="card stack-sm">
           <div class="flex-between">
             <div>
-              <h2>零基础 A 股量化 4 阶段成长路径</h2>
-              <p class="text-xs text-muted" style="margin-top:2px;">勾选已完成的学习任务，进度会自动保存在浏览器中</p>
+              <h2>多市场量化 4 阶段成长路径</h2>
+              <p class="text-xs text-muted" style="margin-top:2px;">勾选已完成任务，支持从 A 股起步平滑拓展到美股与跨市场 AI 量化</p>
             </div>
             <span id="learn-progress-text" class="text-xs font-mono font-semibold tabular-nums">0 / 12 (0%)</span>
           </div>
@@ -212,49 +288,55 @@
 
         <div class="grid-split-5-7">
           <div class="card stack-sm">
-            <h3>核心概念与 A 股铁律速查</h3>
+            <h3>通用核心概念与避坑速查</h3>
             <div class="subcard stack-sm">
               <h4>4 大策略体检指标</h4>
               <p class="text-xs text-muted">
-                <strong>年化收益 (CAGR)</strong> 看长期复利；<strong>最大回撤</strong> 看最坏亏多少；<strong>夏普比率</strong> 看单位风险回报（&gt;1 及格，&gt;2 优秀）；<strong>费用占比</strong> 看有没有白给券商打工。
+                <strong>年化收益 (CAGR)</strong> 看长期复利；<strong>最大回撤</strong> 看最坏亏多少；<strong>夏普比率</strong> 看单位风险回报（&gt;1 及格，&gt;2 优秀）；<strong>费用占比</strong> 看是否给券商打工。
               </p>
             </div>
             <div class="subcard stack-sm">
               <h4>未来函数（Look-ahead Bias）</h4>
               <p class="text-xs text-muted">
-                不是预测未来的工具，而是回测偷看答案的 Bug（如 T 日收盘决策又按 T 日收盘成交、财报未按公告日对齐、全局归一化泄露）。铁律：<strong>T 日出信号，T+1 日开盘成交</strong>。
+                回测偷看未来信息的 Bug（T 日收盘决策又按 T 日收盘成交、财报未按公告日对齐、全局归一化泄露）。铁律：<strong>决策只用已公开历史，成交必须晚于信号</strong>。
               </p>
             </div>
             <div class="subcard stack-sm">
-              <h4>10 万以内 A 股实操规则</h4>
+              <h4>A 股 vs 美股核心差异</h4>
               <p class="text-xs text-muted">
-                股票卖出收 0.05% 印花税、ETF <strong>免印花税</strong>；买入须 100 股整数倍（国债 ETF 511010 单手约 1.4 万元）；默认账户常有单笔最低 5 元佣金，小资金切忌高频换手。
+                <strong>A 股</strong>最小 100 股、股票 T+1、有涨跌停、普通账户常有最低 ¥5 佣金；<strong>美股</strong>最小 1 股、T+0 无涨跌停（注意融资账户 $25k PDT 规则）、多数免佣但需留意汇率和股息预扣税。
               </p>
             </div>
             <div class="subcard stack-sm">
               <h4>过度拟合（Overfitting）</h4>
               <p class="text-xs text-muted">
-                把参数微调到历史曲线完美，只是背下了历史噪音。防范方式：使用 <strong>Walk-Forward 样本外滚动验证</strong>，并优先坚持逻辑清晰的白盒规则。
+                反复调参把历史曲线调到完美，实盘立刻失效。防范方法：使用 <strong>Walk-Forward 滚动样本外验证</strong>，先用白盒策略打底再上复杂机器学习模型。
               </p>
             </div>
           </div>
 
           <div class="card stack-sm">
             <div class="flex-between">
-              <h3>个人量化学习笔记（持续沉淀）</h3>
-              <button id="btn-export-notes-md" type="button" class="btn btn-secondary">导出为 Markdown</button>
+              <h3>个人量化学习笔记（跨市场沉淀）</h3>
+              <button id="btn-export-notes-md" type="button" class="btn btn-secondary">导出 Markdown</button>
             </div>
             <form id="note-form" class="stack-sm">
-              <div style="display:grid; grid-template-columns:2fr 1fr; gap:8px;">
-                <input id="note-title" type="text" class="input" required placeholder="笔记标题，例如：第1课回测心得 / 未来函数理解" />
+              <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px;">
+                <input id="note-title" type="text" class="input" required placeholder="笔记标题，例如：A股全天候回测复盘" />
+                <select id="note-market" class="select">
+                  <option value="A股">A股</option>
+                  <option value="美股">美股</option>
+                  <option value="港股/全球">港股/全球</option>
+                  <option value="通用">通用</option>
+                </select>
                 <select id="note-tag" class="select">
-                  <option value="基础知识">基础知识</option>
                   <option value="回测复盘">回测复盘</option>
+                  <option value="基础知识">基础知识</option>
                   <option value="避坑记录">避坑记录</option>
                   <option value="策略灵感">策略灵感</option>
                 </select>
               </div>
-              <textarea id="note-body" rows="3" class="textarea" required placeholder="记录学习总结、策略回撤观察或下一步实验计划..."></textarea>
+              <textarea id="note-body" rows="3" class="textarea" required placeholder="写下你的学习总结、数据观察或下一阶段要验证的假设..."></textarea>
               <div style="display:flex; justify-content:flex-end;">
                 <button type="submit" class="btn btn-primary">保存笔记</button>
               </div>
@@ -264,14 +346,14 @@
         </div>
       </section>
 
-      <!-- TAB 3: PAPER TRADING JOURNAL -->
+      <!-- ==================== TAB 4: MULTI-MARKET PAPER JOURNAL ==================== -->
       <section id="tab-journal" class="tab-panel stack-md hidden">
         <div class="grid-kpi">
           <div class="card stack-sm">
-            <div class="text-xs text-muted">模拟盘初始本金</div>
+            <div class="text-xs text-muted"><span id="journal-market-label">A股市场</span> · 模拟盘初始本金</div>
             <div class="flex-inline">
-              <input id="journal-capital" type="number" min="10000" max="100000" step="5000" value="80000" class="kpi-input tabular-nums" />
-              <span class="text-xs text-muted">元</span>
+              <span id="journal-currency-prefix" class="font-mono font-semibold">¥</span>
+              <input id="journal-capital" type="number" min="1000" max="10000000" step="1000" value="80000" class="kpi-input tabular-nums" />
             </div>
           </div>
           <div class="card stack-sm">
@@ -290,10 +372,13 @@
 
         <div class="card stack-sm">
           <div class="flex-between">
-            <h2>录入东方财富模拟盘记录（仅学习跟踪）</h2>
+            <div>
+              <h2 id="journal-form-title">录入模拟盘交易记录（按当前所选市场独立记账）</h2>
+              <p id="journal-broker-hint" class="text-xs text-muted" style="margin-top:2px;"></p>
+            </div>
             <div class="actions-row">
-              <button id="btn-export-trades-csv" type="button" class="btn btn-secondary">导出 CSV</button>
-              <button id="btn-clear-trades" type="button" class="btn">清空记录</button>
+              <button id="btn-export-trades-csv" type="button" class="btn btn-secondary">导出当前市场 CSV</button>
+              <button id="btn-clear-trades" type="button" class="btn">清空当前市场记录</button>
             </div>
           </div>
           <form id="trade-form" class="form-grid-6">
@@ -303,9 +388,9 @@
               <option value="BUY">买入 (BUY)</option>
               <option value="SELL">卖出 (SELL)</option>
             </select>
-            <input id="tr-price" type="number" step="0.001" min="0.001" class="input tabular-nums" required placeholder="成交价(元)" />
-            <input id="tr-qty" type="number" step="100" min="100" class="input tabular-nums" required placeholder="股数(100倍数)" />
-            <button type="submit" class="btn btn-primary">记录此笔模拟单</button>
+            <input id="tr-price" type="number" step="0.001" min="0.001" class="input tabular-nums" required placeholder="成交价" />
+            <input id="tr-qty" type="number" step="100" min="100" class="input tabular-nums" required placeholder="股数" />
+            <button type="submit" class="btn btn-primary">记录模拟单</button>
             <input id="tr-note" type="text" class="input span-full" placeholder="策略信号依据 & 当时心态复盘（例如：月度动量排名前2，按计划执行）" />
           </form>
         </div>
@@ -350,13 +435,13 @@
         </div>
       </section>
 
-      <!-- TAB 4: ETF ARCHIVE & RESOURCES -->
+      <!-- ==================== TAB 5: UNIVERSE & ECOSYSTEM ==================== -->
       <section id="tab-resources" class="tab-panel stack-md hidden">
         <div class="card stack-sm">
           <div class="flex-between">
             <div>
-              <h2>我的 A 股核心 ETF 标的档案库</h2>
-              <p class="text-xs text-muted" style="margin-top:2px;">持续沉淀在东方财富关注的 ETF，新增后自动同步至模拟盘下拉列表</p>
+              <h2 id="etf-pool-heading">标的档案库</h2>
+              <p class="text-xs text-muted" style="margin-top:2px;">按市场独立维护自选 ETF / 标的池，新增后自动同步至该市场的模拟盘下拉列表</p>
             </div>
             <input id="etf-search" type="text" class="input" style="width:220px;" placeholder="搜索代码 / 名称 / 定位..." />
           </div>
@@ -368,7 +453,7 @@
                   <th>名称</th>
                   <th>资产类别</th>
                   <th>交易制度</th>
-                  <th>1手参考门槛</th>
+                  <th>最小单位参考</th>
                   <th>配置作用</th>
                   <th class="text-right">操作</th>
                 </tr>
@@ -377,28 +462,28 @@
             </table>
           </div>
           <form id="etf-add-form" class="form-grid-6" style="padding-top:10px; border-top:1px solid var(--border);">
-            <input id="etf-code" type="text" class="input" required placeholder="代码如 588000" />
-            <input id="etf-name" type="text" class="input" required placeholder="名称如 科创50ETF" />
-            <input id="etf-cat" type="text" class="input" required placeholder="类别如 A股科技" />
+            <input id="etf-code" type="text" class="input" required placeholder="代码如 588000 / NVDA" />
+            <input id="etf-name" type="text" class="input" required placeholder="标的名称" />
+            <input id="etf-cat" type="text" class="input" required placeholder="类别如 科技 / 宽基" />
             <select id="etf-t0" class="select">
               <option value="T+1">T+1</option>
               <option value="T+0">T+0</option>
             </select>
-            <input id="etf-role" type="text" class="input" required placeholder="定位备注" />
-            <button type="submit" class="btn btn-primary">新增 ETF</button>
+            <input id="etf-role" type="text" class="input" required placeholder="配置定位备注" />
+            <button type="submit" class="btn btn-primary">新增标的</button>
           </form>
         </div>
 
         <div class="card stack-sm">
           <div class="flex-between">
-            <h3>优质量化开源项目与数据源收藏</h3>
-            <span class="text-xs text-muted">涵盖 AI 量化、回测引擎、A 股免费数据与实盘框架</span>
+            <h3>跨市场量化开源项目与数据源收藏</h3>
+            <span class="text-xs text-muted">覆盖 AI 量化、回测引擎、A股/美股/Crypto 数据与实盘框架</span>
           </div>
           <div id="resources-grid" class="grid-3"></div>
           <form id="res-add-form" class="form-grid-4" style="padding-top:10px; border-top:1px solid var(--border);">
             <input id="res-name" type="text" class="input" required placeholder="资料/项目名称" />
             <input id="res-cat" type="text" class="input" required placeholder="分类（如 开源框架 / 书籍 / 数据源）" />
-            <input id="res-desc" type="text" class="input" required placeholder="一句话说明或链接记录" />
+            <input id="res-desc" type="text" class="input" required placeholder="一句话说明、适用市场或链接记录" />
             <button type="submit" class="btn btn-secondary">沉淀新资料</button>
           </form>
         </div>
@@ -406,7 +491,7 @@
     </main>
 
     <footer class="app-footer">
-      <span>QuantLab 个人学习工作台 · 数据存于本地浏览器，支持 JSON 备份至 Google Drive 与 GitHub 仓库版本管理。</span>
+      <span>QuantLab 多市场个人量化学习与投研工作台 · 支持 A股 / 美股 / 港股与全球资产扩展。</span>
       <span>免责声明：仅用于量化编程学习与历史统计演示，不构成任何投资建议。</span>
     </footer>
   </div>

@@ -11,7 +11,14 @@ function getThemeColors() {
   };
 }
 
-export function drawLineChart(canvas, dates, seriesList, { isDrawdown, initialCash, hoverIdx }) {
+function formatAxisMoney(val, currency) {
+  if (Math.abs(val) >= 10000) {
+    return `${currency}${(val / 1000).toFixed(0)}k`;
+  }
+  return `${currency}${(val / 1000).toFixed(1)}k`;
+}
+
+export function drawLineChart(canvas, dates, seriesList, { isDrawdown, initialCash, hoverIdx, currency = "¥" }) {
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   if (rect.width < 10) return;
@@ -22,7 +29,7 @@ export function drawLineChart(canvas, dates, seriesList, { isDrawdown, initialCa
 
   const W = rect.width;
   const H = rect.height;
-  const pad = { top: 14, right: 16, bottom: 24, left: 62 };
+  const pad = { top: 14, right: 16, bottom: 24, left: 66 };
   const plotW = W - pad.left - pad.right;
   const plotH = H - pad.top - pad.bottom;
   const tc = getThemeColors();
@@ -44,7 +51,7 @@ export function drawLineChart(canvas, dates, seriesList, { isDrawdown, initialCa
     yMax = 0;
     yMin = Math.min(-5, Math.floor(yMin / 5) * 5);
   } else {
-    const span = Math.max(1000, yMax - yMin);
+    const span = Math.max(initialCash * 0.05, yMax - yMin);
     yMin = Math.max(0, yMin - span * 0.06);
     yMax = yMax + span * 0.06;
   }
@@ -67,7 +74,7 @@ export function drawLineChart(canvas, dates, seriesList, { isDrawdown, initialCa
     ctx.stroke();
 
     ctx.fillStyle = tc.muted;
-    const label = isDrawdown ? `${val.toFixed(0)}%` : `¥${Math.round(val / 1000)}k`;
+    const label = isDrawdown ? `${val.toFixed(0)}%` : formatAxisMoney(val, currency);
     ctx.fillText(label, pad.left - 8, y);
   }
 

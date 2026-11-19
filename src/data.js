@@ -1,79 +1,114 @@
-export const STORAGE_KEY = "antigravity_quant_workbench_v1";
+import { MARKETS } from "./markets.js";
+
+export const STORAGE_KEY = "quantlab_universal_v2";
+export const LEGACY_STORAGE_KEY = "antigravity_quant_workbench_v1";
 
 export const DEFAULT_ROADMAP = [
-  { id: "s1_1", stage: "第 1 阶段 · 市场规则与指标", text: "理解 ETF 与个股差异（免印花税、无个股退市风险、100 股门槛）", done: false },
-  { id: "s1_2", stage: "第 1 阶段 · 市场规则与指标", text: "掌握 4 大体检指标：年化收益、最大回撤、夏普比率、费用占比", done: false },
-  { id: "s1_3", stage: "第 1 阶段 · 市场规则与指标", text: "搞懂前复权 / 后复权与东方财富单笔最低 5 元佣金规则", done: false },
-  { id: "s2_1", stage: "第 2 阶段 · 白盒策略实战", text: "在 Colab 跑通第 1 课 Notebook 并拉取 7 只 ETF 真实日线缓存到 Drive", done: false },
-  { id: "s2_2", stage: "第 2 阶段 · 白盒策略实战", text: "对比「买入持有 vs 全天候平衡 vs 动量轮动」的收益与回撤曲线", done: false },
-  { id: "s2_3", stage: "第 2 阶段 · 白盒策略实战", text: "把 Colab 生成的 lesson01_summary.json 导入本网页复盘", done: false },
-  { id: "s3_1", stage: "第 3 阶段 · 避坑与防过拟合", text: "亲手开关「未来函数」验证 T 日收盘成交带来的虚假收益", done: false },
-  { id: "s3_2", stage: "第 3 阶段 · 避坑与防过拟合", text: "对比 2 日高频调仓与 20 日月频调仓的小资金手续费损耗", done: false },
-  { id: "s3_3", stage: "第 3 阶段 · 避坑与防过拟合", text: "学习样本外滚动验证（Walk-Forward）避免参数过度拟合", done: false },
-  { id: "s4_1", stage: "第 4 阶段 · AI 进阶与模拟跟踪", text: "在东方财富开启至少 1–3 个月模拟盘，每周记录调仓与心态", done: false },
-  { id: "s4_2", stage: "第 4 阶段 · AI 进阶与模拟跟踪", text: "启用 Colab Pro+ L4/A100 跑 Microsoft Qlib / LightGBM 多因子基线", done: false },
-  { id: "s4_3", stage: "第 4 阶段 · AI 进阶与模拟跟踪", text: "沉淀个人策略手册与风控止损纪律，形成长期可复用研究库", done: false },
-];
-
-export const DEFAULT_ETFS = [
-  { code: "510300", name: "沪深300ETF", cat: "A股宽基", t0: "T+1", lotHint: "~400元/手", role: "A股核心大盘蓝筹基准" },
-  { code: "510500", name: "中证500ETF", cat: "A股宽基", t0: "T+1", lotHint: "~600元/手", role: "中盘成长与弹性代表" },
-  { code: "159915", name: "创业板ETF", cat: "A股成长", t0: "T+1", lotHint: "~250元/手", role: "高波动成长科技进攻端" },
-  { code: "510880", name: "红利ETF", cat: "A股防御", t0: "T+1", lotHint: "~320元/手", role: "高股息价值风格压舱石" },
-  { code: "518880", name: "黄金ETF", cat: "大宗商品", t0: "T+0", lotHint: "~600元/手", role: "抗通胀与地缘避险资产" },
-  { code: "513100", name: "纳指ETF", cat: "跨境美股", t0: "T+0", lotHint: "~160元/手", role: "全球科技分散（注意溢价率）" },
-  { code: "511010", name: "国债ETF", cat: "利率债券", t0: "T+0", lotHint: "~14,100元/手", role: "5年期国债避险低波资产" },
+  { id: "s1_1", stage: "第 1 阶段 · 市场规则与量化地基", market: "通用", text: "理解 ETF 与个股差异（免印花税/分散风险/流动性）以及不同市场规则（A股 T+1 vs 美股 T+0）", done: false },
+  { id: "s1_2", stage: "第 1 阶段 · 市场规则与量化地基", market: "通用", text: "掌握 4 大策略体检指标：年化收益 (CAGR)、最大回撤 (MaxDD)、夏普比率、费用占比", done: false },
+  { id: "s1_3", stage: "第 1 阶段 · 市场规则与量化地基", market: "A股", text: "搞懂前复权 / 后复权、100 股整手规则与东方财富单笔最低 5 元佣金影响", done: false },
+  { id: "s2_1", stage: "第 2 阶段 · 白盒策略与真实数据闭环", market: "A股", text: "在 Colab 跑通第 1 课 Notebook，拉取 7 只 A 股核心 ETF 真实日线并同步到本工作台", done: true },
+  { id: "s2_2", stage: "第 2 阶段 · 白盒策略与真实数据闭环", market: "A股", text: "对比真实回测中「沪深300持有 vs 全天候平衡 vs 月度动量轮动」的收益与回撤表现", done: false },
+  { id: "s2_3", stage: "第 2 阶段 · 白盒策略与真实数据闭环", market: "美股", text: "拓展至美股 ETF 池（SPY / QQQ / GLD / TLT / SHY），对比跨市场相关性与无涨跌停特征", done: false },
+  { id: "s3_1", stage: "第 3 阶段 · 避坑与防过拟合实验", market: "通用", text: "亲手开关「未来函数」验证 T 日收盘成交带来的回测偏差", done: false },
+  { id: "s3_2", stage: "第 3 阶段 · 避坑与防过拟合实验", market: "A股", text: "复盘真实回测「陷阱 B」：理解每 2 日高频调仓如何产生占本金 65% 的手续费+滑点", done: false },
+  { id: "s3_3", stage: "第 3 阶段 · 避坑与防过拟合实验", market: "通用", text: "掌握 Walk-Forward 样本外滚动验证，识别参数过度拟合的假策略", done: false },
+  { id: "s4_1", stage: "第 4 阶段 · AI 量化进阶与模拟实盘", market: "A股", text: "在东方财富坚持 1–3 个月低频模拟跟踪，记录每笔调仓信号与心态复盘", done: false },
+  { id: "s4_2", stage: "第 4 阶段 · AI 量化进阶与模拟实盘", market: "通用", text: "利用已联调成功的 Colab Pro+ GPU (L4/A100/G4) 运行 Microsoft Qlib / LightGBM 多因子实验", done: false },
+  { id: "s4_3", stage: "第 4 阶段 · AI 量化进阶与模拟实盘", market: "美股", text: "探索跨市场组合（A 股 + 美股 + 黄金 + 债券）与 LLM 财报/研报情绪因子提取", done: false },
 ];
 
 export const DEFAULT_RESOURCES = [
-  { name: "Microsoft Qlib", cat: "AI 量化平台", desc: "微软开源 AI 量化基础设施，内置 Alpha158 因子、LightGBM/深度时序模型与回测，契合 Colab GPU。" },
-  { name: "NautilusTrader", cat: "现代回测引擎", desc: "Rust 核心 + Python 接口，回测与实盘同代码架构，性能与工程质量极高。" },
-  { name: "VectorBT", cat: "向量化回测", desc: "基于 NumPy/Numba 的高速参数扫描库，适合快速验证 ETF 轮动与规则策略。" },
-  { name: "AKShare / BaoStock", cat: "A股免费数据", desc: "零成本拉取 A 股复权日线、ETF 行情、财报与宏观指标的必备 Python 数据库。" },
-  { name: "VeighNa (vn.py)", cat: "国内实盘框架", desc: "国内最成熟的开源实盘交易框架，支持合规券商接口（QMT/CTP）与多策略管理。" },
-  { name: "QuantStats / Alphalens", cat: "绩效与因子分析", desc: "一键生成专业夏普/回撤/月度收益热力图，以及单因子 IC/IR 分层检验。" },
+  { name: "Microsoft Qlib", cat: "AI 量化平台", markets: "A股 / 美股", desc: "微软开源 AI 量化基础设施，内置 Alpha158 因子、LightGBM/深度时序模型与回测，契合 Colab GPU。" },
+  { name: "NautilusTrader", cat: "现代回测引擎", markets: "全市场", desc: "Rust 核心 + Python 接口，回测与实盘同代码架构，支持股票、期货、外汇与 Crypto。" },
+  { name: "VectorBT", cat: "向量化回测", markets: "全市场", desc: "基于 NumPy/Numba 的高速参数扫描库，适合快速验证多市场 ETF 轮动与规则策略。" },
+  { name: "AKShare / BaoStock", cat: "免费数据源", markets: "A股 / 港股 / 宏观", desc: "零成本拉取 A 股复权日线、ETF 行情、财报与宏观指标的必备 Python 数据库。" },
+  { name: "yfinance / FRED", cat: "免费数据源", markets: "美股 / 全球", desc: "拉取美股/港股/全球 ETF 历史行情与美联储利率、CPI 等宏观经济序列。" },
+  { name: "VeighNa (vn.py)", cat: "实盘交易框架", markets: "A股 / 国内期货", desc: "国内最成熟的开源实盘交易框架，支持合规券商接口（QMT/CTP）与多策略管理。" },
+  { name: "QuantConnect LEAN", cat: "机构级引擎", markets: "美股 / 期权 / 期货", desc: "开源多资产量化引擎，支持 Python 策略与美股/期权/外汇精细建模。" },
+  { name: "QuantStats / Alphalens", cat: "绩效与因子分析", markets: "全市场", desc: "一键生成专业夏普/回撤/月度收益热力图，以及单因子 IC/IR 分层检验。" },
+  { name: "Freqtrade / CCXT", cat: "扩展生态", markets: "Crypto 7×24h", desc: "若未来扩展到加密货币策略，CCXT 与 Freqtrade 是最成熟的开源行情与自动化框架。" },
 ];
 
 export const DEFAULT_NOTES = [
   {
     id: "n_init_1",
     date: "2026-11-19",
+    market: "A股",
+    tag: "回测复盘",
+    title: "A股第1课真实回测关键发现 (2018–2026)",
+    body: "1) 单持沪深300（S1）8年年化仅 +1.56%，最大回撤高达 -41.98%；\n2) 股债金全天候（S2）年化 +6.82%，最大回撤压缩至 -9.39%，夏普 0.60，总费用仅占本金 1.02%，非常稳健；\n3) 陷阱B每2日调仓产生 2,099 笔交易，佣金+滑点高达 ¥52,183（占初始8万本金的 65.23%），说明小资金高频换手磨损极其惊人。",
+  },
+  {
+    id: "n_init_2",
+    date: "2026-11-19",
+    market: "通用",
     tag: "避坑记录",
-    title: "关于未来函数的核心理解",
+    title: "关于未来函数（Look-ahead Bias）的铁律",
     body: "未来函数不是预测未来的工具，而是回测偷看答案的 Bug。决策时刻只能使用当时已经公开的数据，成交必须晚于信号（T日收盘信号 -> T+1日开盘成交）。",
   },
 ];
 
-export const DEFAULT_TRADES = [
-  {
-    id: "t_demo_1",
-    date: "2026-11-03",
-    code: "518880",
-    name: "黄金ETF",
-    side: "BUY",
-    price: 6.12,
-    qty: 6000,
-    commission: 9.18,
-    note: "【示例记录】月度动量排名前2，按计划模拟建仓约 45% 仓位（可随时清空开始你的记录）",
-  },
-  {
-    id: "t_demo_2",
-    date: "2026-11-03",
-    code: "513100",
-    name: "纳指ETF",
-    side: "BUY",
-    price: 1.68,
-    qty: 20000,
-    commission: 8.40,
-    note: "【示例记录】月度动量排名前2，跨境资产分散风险",
-  },
-];
+export const DEFAULT_TRADES_BY_MARKET = {
+  cn: [
+    {
+      id: "t_cn_demo_1",
+      date: "2026-11-03",
+      code: "518880",
+      name: "黄金ETF",
+      side: "BUY",
+      price: 6.12,
+      qty: 6000,
+      commission: 9.18,
+      note: "【示例记录】A股月度动量排名前2，模拟建仓约 45% 仓位（可随时清空开始你的记录）",
+    },
+    {
+      id: "t_cn_demo_2",
+      date: "2026-11-03",
+      code: "513100",
+      name: "纳指ETF",
+      side: "BUY",
+      price: 1.68,
+      qty: 20000,
+      commission: 8.40,
+      note: "【示例记录】A股跨境配置，分散单一市场波动",
+    },
+  ],
+  us: [
+    {
+      id: "t_us_demo_1",
+      date: "2026-11-03",
+      code: "SPY",
+      name: "标普500 ETF",
+      side: "BUY",
+      price: 585.0,
+      qty: 8,
+      commission: 1.0,
+      note: "【示例记录】美股最小可买 1 股，模拟建立核心大盘底仓",
+    },
+  ],
+  global: [],
+};
+
+export function createInitialMarketStates() {
+  const byMarket = {};
+  for (const [id, cfg] of Object.entries(MARKETS)) {
+    byMarket[id] = {
+      etfs: structuredClone(cfg.defaultEtfs),
+      trades: structuredClone(DEFAULT_TRADES_BY_MARKET[id] || []),
+      journalCapital: cfg.defaultCash,
+      colabReport: null,
+    };
+  }
+  return byMarket;
+}
 
 /**
- * Deterministic multi-regime 2018-2026 calibrated ETF series for interactive sandbox learning.
+ * Deterministic multi-regime 2018-2026 calibrated fallback series for any configured market.
  */
-export function generateCalibratedMarket() {
-  let seed = 20180102;
+export function generateCalibratedMarket(marketCfg) {
+  const profile = marketCfg.simProfile;
+  let seed = profile.seed || 20180102;
   const rand = () => {
     seed |= 0;
     seed = (seed + 0x6D2B79F5) | 0;
@@ -92,30 +127,11 @@ export function generateCalibratedMarket() {
   const cur = new Date(2018, 0, 2);
   while (dates.length < nDays) {
     const dow = cur.getDay();
-    if (dow !== 0 && dow !== 6) {
-      dates.push(cur.toISOString().slice(0, 10));
-    }
+    if (dow !== 0 && dow !== 6) dates.push(cur.toISOString().slice(0, 10));
     cur.setDate(cur.getDate() + 1);
   }
 
-  const yearlyDrifts = {
-    "510300": [-0.24, 0.34, 0.25, -0.05, -0.21, -0.11, 0.16, 0.11],
-    "510500": [-0.30, 0.26, 0.21, 0.14, -0.20, -0.07, 0.10, 0.14],
-    "159915": [-0.28, 0.42, 0.58, 0.12, -0.29, -0.18, 0.18, 0.15],
-    "510880": [-0.14, 0.15, 0.04, 0.16, -0.02, 0.08, 0.16, 0.09],
-    "518880": [0.04, 0.19, 0.14, -0.04, 0.09, 0.16, 0.27, 0.18],
-    "513100": [0.02, 0.37, 0.36, 0.24, -0.27, 0.48, 0.26, 0.14],
-    "511010": [0.06, 0.04, 0.03, 0.04, 0.03, 0.04, 0.06, 0.03],
-  };
-  const vols = {
-    "510300": 0.19, "510500": 0.23, "159915": 0.28, "510880": 0.15,
-    "518880": 0.13, "513100": 0.22, "511010": 0.022,
-  };
-  const initPx = {
-    "510300": 4.05, "510500": 6.10, "159915": 1.75, "510880": 2.45,
-    "518880": 2.75, "513100": 0.65, "511010": 112.0,
-  };
-  const codes = Object.keys(initPx);
+  const codes = Object.keys(profile.initPx);
   const close = {};
   const open = {};
   codes.forEach((c) => {
@@ -123,23 +139,20 @@ export function generateCalibratedMarket() {
     open[c] = new Float64Array(nDays);
   });
 
-  const px = { ...initPx };
+  const px = { ...profile.initPx };
   for (let i = 0; i < nDays; i++) {
     const yrIdx = Math.min(7, Math.floor(i / 244));
-    const zChina = randn();
-    const zGlobal = randn();
+    const zEq = randn();
     const zSafe = randn();
     for (const c of codes) {
-      const mu = yearlyDrifts[c][yrIdx] / 244;
-      const sig = vols[c] / Math.sqrt(244);
-      let factor = 0;
-      if (c === "510300" || c === "510500" || c === "159915") factor = 0.78 * zChina + 0.62 * randn();
-      else if (c === "510880") factor = 0.58 * zChina + 0.81 * randn();
-      else if (c === "513100") factor = 0.20 * zChina + 0.72 * zGlobal + 0.66 * randn();
-      else if (c === "518880") factor = -0.15 * zChina + 0.55 * zSafe + 0.82 * randn();
-      else factor = -0.25 * zChina + 0.60 * zSafe + 0.76 * randn();
+      const mu = profile.yearlyDrifts[c][yrIdx] / 244;
+      const sig = profile.vols[c] / Math.sqrt(244);
+      const isSafe = c === marketCfg.safeCode || c === "TLT" || c === "518880" || c === "GLD" || c === "2840.HK";
+      const factor = isSafe
+        ? -0.2 * zEq + 0.58 * zSafe + 0.79 * randn()
+        : 0.74 * zEq + 0.67 * randn();
 
-      const gap = randn() * sig * 0.35;
+      const gap = randn() * sig * 0.3;
       const o = Math.max(0.1, px[c] * (1 + gap));
       const ret = mu + sig * factor;
       const cl = Math.max(0.1, px[c] * Math.exp(ret - 0.5 * sig * sig));
@@ -148,5 +161,5 @@ export function generateCalibratedMarket() {
       px[c] = cl;
     }
   }
-  return { dates, codes, open, close };
+  return { dates, codes, open, close, isReal: false };
 }
