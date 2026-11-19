@@ -1,4 +1,4 @@
-import { MARKETS, MARKET_ORDER } from "./markets.js";
+import { MARKETS, MARKET_ORDER, lotOf } from "./markets.js";
 import {
   STORAGE_KEY,
   LEGACY_STORAGE_KEY,
@@ -74,7 +74,17 @@ function migrateState(st) {
   }
   st.seenResourceNames = DEFAULT_RESOURCES.map((d) => d.name);
   if (!st.llmChecklist || typeof st.llmChecklist !== "object") st.llmChecklist = {};
-  // 3) 旧版示例交易用的是虚构成交价，会算出虚假盈亏：未被改动过的示例记录换成按当日真实收盘价的版本
+  // 3) 港股标的池：旧版把 3067.HK（实为安硕恒生科技）误标为“港元货币/短债代理”，换成真正的港元货币 ETF 3053.HK
+  const gEtfs = st.markets?.global?.etfs;
+  if (Array.isArray(gEtfs)) {
+    const fresh = MARKETS.global.defaultEtfs;
+    st.markets.global.etfs = gEtfs.map((e) => {
+      if (e.code === "3067.HK" && /货币|短债/.test(e.name || "")) return structuredClone(fresh.find((x) => x.code === "3053.HK"));
+      const d = fresh.find((x) => x.code === e.code);
+      return d && /~HK\$/.test(e.lotHint || "") ? { ...e, name: d.name, lotHint: d.lotHint, role: d.role } : e;
+    });
+  }
+  // 4) 旧版示例交易用的是虚构成交价，会算出虚假盈亏：未被改动过的示例记录换成按当日真实收盘价的版本
   const OLD_SAMPLE_PRICES = { t_cn_demo_1: 6.12, t_cn_demo_2: 1.68, t_us_demo_1: 585.0 };
   const freshSamples = createInitialMarketStates();
   for (const id of MARKET_ORDER) {
@@ -278,7 +288,7 @@ function renderMarketSwitcher() {
       ? `${cfg.shortName} · 演示数据`
       : "加载市场数据中...";
   document.getElementById("active-market-rule-chip").textContent =
-    `${cfg.currencyCode} · 最小单位 ${cfg.lotSize} 股 · ${cfg.stampDutyNote}`;
+    `${cfg.currencyCode} · ${cfg.lotNote || `最小单位 ${cfg.lotSize} 股`} · ${cfg.stampDutyNote}`;
 }
 
 function switchMarket(marketId) {
@@ -534,7 +544,7 @@ function renderOverview() {
         </div>
         ${metricHtml}
         <div class="flex-between text-xs text-muted" style="padding-top:4px; border-top:1px solid var(--border);">
-          <span>最小 ${cfg.lotSize} 股 · ${cfg.currencyCode}</span>
+          <span>${cfg.lotNote || `最小 ${cfg.lotSize} 股`} · ${cfg.currencyCode}</span>
           <span style="color:var(--primary); font-weight:500;">${isSel ? "当前选中" : "点击切换 →"}</span>
         </div>
       </div>`;
@@ -562,7 +572,7 @@ function renderOverview() {
       <tr>
         <td class="font-semibold whitespace-nowrap">${escapeHtml(c.label)}</td>
         <td class="font-mono">${c.currencyCode} (${c.currency})</td>
-        <td class="font-mono whitespace-nowrap">${c.lotSize} 股</td>
+        <td class="font-mono whitespace-nowrap">${c.lotSizes ? "按 ETF 而定" : `${c.lotSize} 股`}</td>
         <td class="text-muted">${escapeHtml(c.tradingRule)}</td>
         <td class="text-muted">${escapeHtml(c.stampDutyNote)}</td>
         <td class="text-muted">${escapeHtml(c.dataSources)}</td>
@@ -618,7 +628,8 @@ function buildFallbackDailyMarket(marketId) {
   const byCode = Object.fromEntries(rows.map((r) => [r.code, r]));
   const plan = Object.entries(weights).map(([c, wt]) => {
     const px = byCode[c].close;
-    const qty = Math.floor((cfg.defaultCash * wt) / (px * cfg.lotSize)) * cfg.lotSize;
+    const lot = lotOf(cfg, c);
+    const qty = Math.floor((cfg.defaultCash * wt) / (px * lot)) * lot;
     return { code: c, name: byCode[c].name, weight_pct: wt * 100, ref_price: px, qty, est_amount: Number((qty * px).toFixed(1)) };
   });
   for (const r of rows) {
@@ -978,7 +989,7 @@ function updateSandbox() {
   document.getElementById("sandbox-heading").textContent = `${cfg.label} 交互回测沙盒`;
   setProv(document.getElementById("sandbox-prov"), series.isReal ? "real" : "demo", series.isReal ? "真实历史行情" : "演示数据（模拟生成）");
   document.getElementById("sandbox-subtitle").textContent =
-    `${dateSpan}（${series.dates.length} 交易日 · 最小 ${cfg.lotSize} 股整数倍）`;
+    `${dateSpan}（${series.dates.length} 交易日 · ${cfg.lotSizes ? "按各 ETF 每手股数成交" : `最小 ${cfg.lotSize} 股整数倍`}）`;
   document.getElementById("chart-title-line").textContent =
     `${cfg.shortName}净值曲线与回撤对比（${series.isReal ? "真实数据" : "演示数据"}）`;
 
@@ -992,7 +1003,7 @@ function updateSandbox() {
       minComm,
       slippageRate: 0.0005,
       lookahead,
-      lotSize: cfg.lotSize,
+      lotSize: cfg.lotSizes || cfg.lotSize,
     }),
   }));
 
@@ -1372,6 +1383,16 @@ function renderNotes() {
   });
 }
 
+// 股数输入框的步长跟随所选标的的每手股数
+function syncQtyStep() {
+  const cfg = getActiveCfg();
+  const lot = lotOf(cfg, document.getElementById("tr-code").value);
+  const qtyInput = document.getElementById("tr-qty");
+  qtyInput.step = String(lot);
+  qtyInput.min = String(lot);
+  qtyInput.placeholder = lot > 1 ? `股数（${lot} 的倍数）` : "股数（1 股起）";
+}
+
 function isSampleTrade(t) {
   return /_demo_/.test(String(t.id || "")) || String(t.note || "").includes("【示例记录】");
 }
@@ -1483,12 +1504,7 @@ function renderJournal() {
   document.getElementById("journal-capital").value = cap;
   document.getElementById("journal-form-title").textContent = `录入 ${cfg.label} 模拟盘交易记录`;
   document.getElementById("journal-broker-hint").textContent =
-    `参考通道：${cfg.brokerNote} | 最小步长：${cfg.lotSize} 股 | 默认佣金按 ${cfg.minCommLabel} 起估算`;
-
-  const qtyInput = document.getElementById("tr-qty");
-  qtyInput.step = String(cfg.lotSize);
-  qtyInput.min = String(cfg.lotSize);
-  qtyInput.placeholder = cfg.lotSize > 1 ? `股数(${cfg.lotSize}倍数)` : "股数(1股起)";
+    `参考通道：${cfg.brokerNote} | ${cfg.lotSizes ? "每手股数随所选 ETF 变化" : `最小步长：${cfg.lotSize} 股`} | 默认佣金按 ${cfg.minCommLabel} 起估算`;
 
   const sel = document.getElementById("tr-code");
   const prev = sel.value;
@@ -1496,6 +1512,7 @@ function renderJournal() {
     .map((e) => `<option value="${escapeHtml(e.code)}">${escapeHtml(e.code)} ${escapeHtml(e.name)}</option>`)
     .join("");
   if (prev && ms.etfs.some((e) => e.code === prev)) sel.value = prev;
+  syncQtyStep();
 
   const sorted = [...ms.trades].sort((a, b) => a.date.localeCompare(b.date));
   const pos = {};
@@ -2148,6 +2165,7 @@ function bindEvents() {
     renderOverview();
   });
 
+  document.getElementById("tr-code").addEventListener("change", syncQtyStep);
   document.getElementById("trade-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const cfg = getActiveCfg();
@@ -2155,8 +2173,12 @@ function bindEvents() {
     const code = document.getElementById("tr-code").value;
     const etf = ms.etfs.find((x) => x.code === code) || { name: code };
     const price = Number(document.getElementById("tr-price").value);
-    const qty = Math.floor(Number(document.getElementById("tr-qty").value) / cfg.lotSize) * cfg.lotSize;
-    if (!price || qty < cfg.lotSize) return;
+    const lot = lotOf(cfg, code);
+    const qty = Math.floor(Number(document.getElementById("tr-qty").value) / lot) * lot;
+    if (!price || qty < lot) {
+      toast(`股数需为 ${lot} 的整数倍（${etf.name} 每手 ${lot} 股）`, "error");
+      return;
+    }
     const comm = cfg.defaultCommRate === 0 && cfg.defaultMinComm === 0
       ? 0
       : Math.max(cfg.defaultMinComm, price * qty * cfg.defaultCommRate);

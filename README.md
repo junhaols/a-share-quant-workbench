@@ -6,7 +6,7 @@
 
 ## 核心架构与模块
 
-- **全局市场切换栏（`src/markets.js`）**：一键在 **A 股（RMB · 100 股 · T+1/T+0）**、**美股（USD · 1 股 · T+0）**、**港股与全球（HKD）** 之间切换，手数、货币、佣金模型、基准标的与数据源自动适配。
+- **全局市场切换栏（`src/markets.js`）**：一键在 **A 股（RMB · 100 股 · T+1/T+0）**、**美股（USD · 1 股 · T+0）**、**港股（HKD · 每手股数按 ETF 而定 · T+0）** 之间切换，手数、货币、佣金模型、基准标的与数据源自动适配。
 - **1. 多市场总览**：各市场进度与真实回测快照卡片、Colab Pro+ GPU 算力状态、A 股/美股/港股规则对照表。
 - **2. 每日行情与 AI 简报**：展示 A 股/美股盘后 ETF 最新涨跌幅、20 日动量排名、波动率与避险参考信号，并沉淀每日盘后 AI 投研风控简报（近 30 天归档）。
 - **3. 回测与 Walk-Forward 实验室**：实时交互沙盒 + 42 组参数高原热力图 + 3 年→1 年 Walk-Forward 滚动样本外验证（含 WFE 效率诊断）+ 调仓日偏移与滑点压力测试。
@@ -17,7 +17,7 @@
 
 ## 安全配置每日盘后 AI 自动简报（GitHub Actions）
 
-仓库内置 `.github/workflows/daily-quant-update.yml`，在每个交易日 A 股收盘后（15:35 CST）与美股收盘后（次日 05:30 CST）自动拉取行情并刷新网页。如需启用 `deepseek-flash` 自动生成每日简报：
+仓库内置 `.github/workflows/daily-quant-update.yml`，在每个交易日 A 股收盘后（15:35 CST）与美股收盘后（次日 05:30 CST）自动拉取 A 股 / 港股 / 美股 ETF 行情并刷新网页。港股 16:00 收盘：15:35 那次运行会自动跳过尚未收盘的当日 K 线，港股当日收盘价在次日 05:30 那次写入（如需当天 16:20 即更新，可把第一个 cron 改为 `20 8 * * 1-5`）。如需启用 `deepseek-flash` 自动生成每日简报：
 
 1. 打开仓库 **Settings → Secrets and variables → Actions**；
 2. 在 **Repository secrets** 新增：
@@ -31,6 +31,7 @@
 - `data/daily_snapshot.json` & `data/ai_brief_history.json` — 每日盘后多市场行情快照与近 30 天 AI 简报历史
 - `data/latest_lesson01_summary.json` — A 股第 1 课真实回测体检指标（2018-01-02 ~ 2026-11-18）
 - `data/real_etf_daily.json` — 7 只 A 股核心 ETF 真实前复权日线（供网页沙盒与 Walk-Forward 实时计算）
+- `data/real_global_etf_daily.json` — 5 只港股 ETF 真实前复权日线（腾讯财经，2020-08 起；盈富 / 南方恒生科技 / GX 高股息 / 价值黄金 / 南方港元货币）
 - `data/lesson01_strategies_comparison.png` — Colab 原生高清净值与回撤对比图
 
 后续拓展美股或港股时，只需将对应 Colab 产出的 `real_us_etf_daily.json` / `latest_us_summary.json` 放入 `data/` 并推送 `main`，GitHub Actions 会自动重新部署上线。

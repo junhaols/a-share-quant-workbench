@@ -52,7 +52,7 @@ export function runMomentumSlice(series, cfg, { startIdx, endIdx, lookback, reba
     minComm,
     slippageRate,
     lookahead: false,
-    lotSize: cfg.lotSize,
+    lotSize: cfg.lotSizes || cfg.lotSize,
   });
 }
 

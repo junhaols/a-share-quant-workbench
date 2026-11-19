@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
-QuantLab Daily Post-Market Updater (A-Shares + US ETFs + Optional LLM Quant Brief)
+QuantLab Daily Post-Market Updater (A-Shares + HK + US ETFs + Optional LLM Quant Brief)
 
 Runs in GitHub Actions (or locally) to:
-1. Fetch latest daily adjusted OHLCV for configured CN & US ETF universes.
-2. Refresh `data/real_etf_daily.json` and `data/real_us_etf_daily.json`.
+1. Fetch latest daily adjusted OHLCV for configured CN, HK & US ETF universes.
+   HK uses Tencent Finance forward-adjusted daily klines first, yfinance as fallback.
+2. Refresh `data/real_etf_daily.json`, `data/real_global_etf_daily.json`
+   and `data/real_us_etf_daily.json`. Bars of a session that has not closed yet
+   are dropped, so a run during trading hours never stores intraday prices as closes.
 3. Compute daily returns (1D / 5D / 20D), 20D annualized volatility, momentum rank,
    and current S2/S3 reference signals into `data/daily_snapshot.json`.
 4. Optionally call an OpenAI-compatible LLM (default model: `deepseek-flash`)
@@ -24,6 +27,7 @@ import os
 import urllib.error
 import urllib.request
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -50,6 +54,22 @@ MARKET_CONFIGS = {
             {"code": "511010", "name": "国债ETF", "yf": "511010.SS", "role": "低波压舱石"},
         ],
     },
+    "global": {
+        "name": "港股市场 (HK)",
+        "currency": "HK$",
+        "lot_size": 100,
+        "default_cash": 100000,
+        "safe_code": "3053.HK",
+        "real_json": DATA_DIR / "real_global_etf_daily.json",
+        # lot = 每手股数（来自港交所/腾讯行情，各 ETF 不同）
+        "etfs": [
+            {"code": "2800.HK", "name": "盈富基金", "yf": "2800.HK", "tx": "hk02800", "lot": 500, "role": "恒指大盘"},
+            {"code": "3033.HK", "name": "南方恒生科技", "yf": "3033.HK", "tx": "hk03033", "lot": 200, "role": "港股科技"},
+            {"code": "3110.HK", "name": "GX恒生高股息", "yf": "3110.HK", "tx": "hk03110", "lot": 50, "role": "高股息防御"},
+            {"code": "3081.HK", "name": "价值黄金", "yf": "3081.HK", "tx": "hk03081", "lot": 100, "role": "港币黄金"},
+            {"code": "3053.HK", "name": "南方港元货币", "yf": "3053.HK", "tx": "hk03053", "lot": 1, "role": "港元现金避险"},
+        ],
+    },
     "us": {
         "name": "美股市场 (US)",
         "currency": "$",
@@ -68,6 +88,70 @@ MARKET_CONFIGS = {
         ],
     },
 }
+
+
+# 各市场收盘时间（当地时间）：当天 K 线只有在收盘之后才会写入
+MARKET_CLOSE = {
+    "cn": ("Asia/Shanghai", "15:05"),
+    "global": ("Asia/Hong_Kong", "16:15"),
+    "us": ("America/New_York", "16:05"),
+}
+
+
+def drop_unclosed_bar(market_id: str, df: pd.DataFrame) -> pd.DataFrame:
+    tz_name, close_hm = MARKET_CLOSE.get(market_id, ("UTC", "23:59"))
+    now = datetime.datetime.now(ZoneInfo(tz_name))
+    if df.empty or now.strftime("%H:%M") >= close_hm:
+        return df
+    today = pd.Timestamp(now.date())
+    return df[df["date"] < today]
+
+
+def clean_open_prices(df: pd.DataFrame) -> pd.DataFrame:
+    """上市首日等脏数据：开盘价偏离收盘价 30% 以上时用收盘价替代。"""
+    bad = (df["open"] <= 0) | ((df["open"] / df["close"] - 1.0).abs() > 0.30)
+    df = df.copy()
+    df.loc[bad, "open"] = df.loc[bad, "close"]
+    return df
+
+
+def has_split_like_jump(df: pd.DataFrame | None, limit: float = 0.40) -> bool:
+    """单日涨跌超过 40% 基本是未复权的拆股/合股痕迹（例如 3081.HK 在 yfinance 上的 1 拆 5 未复权）。"""
+    if df is None or len(df) < 2:
+        return False
+    ret = df["close"].pct_change().abs()
+    return bool((ret > limit).any())
+
+
+def fetch_hk_tencent(tx_symbol: str, start_year: int = 2018) -> pd.DataFrame | None:
+    """腾讯财经港股前复权日 K。接口每次最多返回 640 条，按年分页。"""
+    rows: dict[str, tuple[float, float]] = {}
+    try:
+        for year in range(start_year, datetime.date.today().year + 1):
+            url = (
+                "https://web.ifzq.gtimg.cn/appstock/app/hkfqkline/get?param="
+                f"{tx_symbol},day,{year}-01-01,{year}-12-31,640,qfq"
+            )
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+            node = (payload.get("data") or {}).get(tx_symbol) or {}
+            for k in node.get("qfqday") or node.get("day") or []:
+                if str(k[0]).startswith(str(year)):
+                    rows[k[0]] = (float(k[1]), float(k[2]))
+        if len(rows) < 60:
+            return None
+        out = pd.DataFrame(
+            {
+                "date": pd.to_datetime(list(rows.keys())),
+                "open": [v[0] for v in rows.values()],
+                "close": [v[1] for v in rows.values()],
+            }
+        )
+        return out.sort_values("date").drop_duplicates("date")
+    except Exception as exc:
+        print(f"  [warn] tencent kline failed for {tx_symbol}: {exc}")
+        return None
 
 
 def fetch_series_yfinance(ticker: str, start: str = "2018-01-01") -> pd.DataFrame | None:
@@ -120,10 +204,24 @@ def refresh_market_real_json(market_id: str, cfg: dict, allow_fetch: bool = True
     if allow_fetch:
         frames = {}
         for item in cfg["etfs"]:
-            df = fetch_series_yfinance(item["yf"])
-            if df is None and market_id == "cn":
-                df = fetch_cn_akshare(item["code"])
+            sources = []
+            if item.get("tx"):
+                sources.append(("tencent", lambda it=item: fetch_hk_tencent(it["tx"])))
+            sources.append(("yfinance", lambda it=item: fetch_series_yfinance(it["yf"])))
+            if market_id == "cn":
+                sources.append(("akshare", lambda it=item: fetch_cn_akshare(it["code"])))
+            df = None
+            for src_name, fetch in sources:
+                cand = fetch()
+                if cand is None:
+                    continue
+                if has_split_like_jump(cand):
+                    print(f"  [warn] {src_name} data for {item['code']} has a >40% one-day jump (unadjusted split?), skipped")
+                    continue
+                df = cand
+                break
             if df is not None:
+                df = clean_open_prices(drop_unclosed_bar(market_id, df))
                 frames[item["code"]] = df.set_index("date")
                 print(f"  [{market_id}] fetched {item['code']} ({len(df)} rows)")
 
@@ -160,6 +258,7 @@ def compute_market_snapshot(market_id: str, cfg: dict, series_payload: dict) -> 
     lot_size = cfg["lot_size"]
     default_cash = cfg["default_cash"]
 
+    lot_of = {item["code"]: int(item.get("lot", lot_size)) for item in cfg["etfs"]}
     rows = []
     for item in cfg["etfs"]:
         c = item["code"]
@@ -187,6 +286,7 @@ def compute_market_snapshot(market_id: str, cfg: dict, series_payload: dict) -> 
                 "vol_20d_pct": round(vol20, 2),
                 "above_ma20": above_ma20,
                 "is_safe": c == safe_code,
+                "lot": lot_of[c],
             }
         )
 
@@ -201,8 +301,9 @@ def compute_market_snapshot(market_id: str, cfg: dict, series_payload: dict) -> 
     order_plan = []
     for c, wt in target_weights.items():
         px = row_by_code[c]["close"]
-        lots = int((default_cash * wt) // (px * lot_size))
-        qty = lots * lot_size
+        lot = lot_of.get(c, lot_size)
+        lots = int((default_cash * wt) // (px * lot))
+        qty = lots * lot
         order_plan.append(
             {
                 "code": c,

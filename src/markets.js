@@ -130,13 +130,16 @@ export const MARKETS = {
 
   global: {
     id: "global",
-    shortName: "港股与全球",
-    label: "港股与全球跨市场 (HK / Global)",
-    statusText: "扩展板块 · 跨市场配置沙盒",
-    statusTone: "planned",
+    shortName: "港股市场",
+    label: "港股市场 (HK)",
+    statusText: "已接入真实收盘行情",
+    statusTone: "active",
     currency: "HK$",
     currencyCode: "HKD",
     lotSize: 100,
+    // 港股每手股数因 ETF 而异（港交所规定，来自行情接口）
+    lotSizes: { "2800.HK": 500, "3033.HK": 200, "3110.HK": 50, "3081.HK": 100, "3053.HK": 1 },
+    lotNote: "每手股数因 ETF 而异",
     defaultCash: 100000,
     minCash: 20000,
     maxCash: 200000,
@@ -151,14 +154,14 @@ export const MARKETS = {
     minCommLabel: "最低HK$15",
     stampDutyNote: "港股 ETF 免印花税（个股双边 0.1%）",
     brokerNote: "富途 / 老虎 / IBKR / 港股通（50万门槛）",
-    tradingRule: "T+0，无涨跌停，每手股数因标的而异（ETF 常见 100/200/500 股）",
-    dataSources: "yfinance / AKShare 港股接口 → 富途 OpenD / IBKR",
+    tradingRule: "T+0，无涨跌停，每手股数因标的而异（盈富 500 股、南方恒生科技 200 股、GX 高股息 50 股）",
+    dataSources: "腾讯财经前复权日 K（免费）/ yfinance → 富途 OpenD / IBKR",
     benchmarkCode: "2800.HK",
     benchmarkName: "盈富基金 (恒指)",
-    safeCode: "3067.HK",
-    safeName: "全球短债/现金代理",
+    safeCode: "3053.HK",
+    safeName: "南方港元货币 ETF",
     allWeatherWeights: {
-      "3067.HK": 0.35,
+      "3053.HK": 0.35,
       "2800.HK": 0.20,
       "3033.HK": 0.15,
       "3110.HK": 0.15,
@@ -168,25 +171,30 @@ export const MARKETS = {
     colabReportUrl: "./data/latest_global_summary.json",
     colabChartUrl: "./data/global_strategies_comparison.png",
     defaultEtfs: [
-      { code: "2800.HK", name: "盈富基金 (恒生指数)", cat: "港股大盘", t0: "T+0", lotHint: "~HK$10,000/手", role: "港股核心基准" },
-      { code: "3033.HK", name: "南方恒生科技 ETF", cat: "港股科技", t0: "T+0", lotHint: "~HK$900/手", role: "中概互联网与硬科技" },
-      { code: "3110.HK", name: "恒生高股息率 ETF", cat: "港股红利", t0: "T+0", lotHint: "~HK$2,400/手", role: "高股息防御配置" },
-      { code: "3081.HK", name: "价值黄金 ETF (港)", cat: "大宗商品", t0: "T+0", lotHint: "~HK$6,000/手", role: "港币计价黄金避险" },
-      { code: "3067.HK", name: "港元货币/短债代理", cat: "低波现金", t0: "T+0", lotHint: "~HK$1,000/手", role: "组合避险停泊资产" },
+      { code: "2800.HK", name: "盈富基金", cat: "港股大盘", t0: "T+0", lotHint: "500股/手 ≈ HK$11,500", role: "跟踪恒生指数，港股核心基准" },
+      { code: "3033.HK", name: "南方恒生科技", cat: "港股科技", t0: "T+0", lotHint: "200股/手 ≈ HK$720", role: "中概互联网与硬科技，高波动" },
+      { code: "3110.HK", name: "GX恒生高股息", cat: "港股红利", t0: "T+0", lotHint: "50股/手 ≈ HK$1,500", role: "高股息防御配置" },
+      { code: "3081.HK", name: "价值黄金", cat: "大宗商品", t0: "T+0", lotHint: "100股/手 ≈ HK$1,800", role: "港币计价黄金避险（2025-12 曾 1 拆 5）" },
+      { code: "3053.HK", name: "南方港元货币", cat: "现金管理", t0: "T+0", lotHint: "1股/手 ≈ HK$1,200", role: "港元货币市场基金，组合避险停泊" },
     ],
     simProfile: {
       seed: 20180909,
-      initPx: { "2800.HK": 30.0, "3033.HK": 5.5, "3110.HK": 24.0, "3081.HK": 60.0, "3067.HK": 10.0 },
-      vols: { "2800.HK": 0.22, "3033.HK": 0.34, "3110.HK": 0.16, "3081.HK": 0.14, "3067.HK": 0.015 },
+      initPx: { "2800.HK": 30.0, "3033.HK": 5.5, "3110.HK": 24.0, "3081.HK": 12.0, "3053.HK": 1000.0 },
+      vols: { "2800.HK": 0.22, "3033.HK": 0.34, "3110.HK": 0.16, "3081.HK": 0.14, "3053.HK": 0.005 },
       yearlyDrifts: {
         "2800.HK": [-0.14, 0.10, -0.02, -0.14, -0.15, -0.13, 0.18, 0.14],
         "3033.HK": [-0.18, 0.22, 0.35, -0.32, -0.27, -0.08, 0.22, 0.18],
         "3110.HK": [-0.06, 0.08, -0.04, 0.04, -0.03, 0.06, 0.18, 0.10],
         "3081.HK": [ 0.01, 0.18, 0.23, -0.03, 0.01, 0.13, 0.26, 0.17],
-        "3067.HK": [ 0.02, 0.02, 0.01, 0.01, 0.02, 0.04, 0.04, 0.03],
+        "3053.HK": [ 0.02, 0.02, 0.01, 0.01, 0.02, 0.04, 0.04, 0.03],
       },
     },
   },
 };
 
 export const MARKET_ORDER = ["cn", "us", "global"];
+
+// 某只标的的每手股数：港股按 ETF 区分，其余市场统一
+export function lotOf(cfg, code) {
+  return (cfg.lotSizes && cfg.lotSizes[code]) || cfg.lotSize || 1;
+}

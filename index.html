@@ -662,12 +662,12 @@
             <div class="section-head">
               <div>
                 <h2>本站的大模型链路：盘后 AI 简报</h2>
-                <p class="text-xs text-muted">工作日 A 股收盘后 15:35、美股收盘后次日 05:30（北京时间）由 GitHub Actions 自动运行 <code>scripts/daily_update.py</code></p>
+                <p class="text-xs text-muted">工作日 A 股收盘后 15:35、美股收盘后次日 05:30（北京时间）由 GitHub Actions 自动运行；港股 16:00 收盘，当日数据在次日 05:30 那次写入 <code>scripts/daily_update.py</code></p>
               </div>
               <span id="llm-pipeline-status" class="badge">读取中...</span>
             </div>
             <ol class="pipeline">
-              <li><span class="pipe-tag pipe-code">代码</span><div><strong>拉取行情</strong><p>AKShare 拉 A 股 ETF，yfinance 拉美股 ETF，写入前复权日线 JSON。</p></div></li>
+              <li><span class="pipe-tag pipe-code">代码</span><div><strong>拉取行情</strong><p>A 股、美股用 yfinance（A 股失败时改用 AKShare），港股用腾讯财经前复权日 K（失败时改用 yfinance）；收盘前的当日 K 线一律丢弃，出现疑似未复权拆股的数据源会被跳过。</p></div></li>
               <li><span class="pipe-tag pipe-code">代码</span><div><strong>计算指标与信号</strong><p>1/5/20 日涨跌、20 日波动率、是否站上 MA20、20 日动量 Top2 + 避险切换的目标仓位。</p></div></li>
               <li><span class="pipe-tag pipe-code">代码</span><div><strong>压缩成上下文</strong><p>只把算好的数字和信号标签传给模型，不传原始 K 线，也不传 API Key 之外的任何账户信息。</p></div></li>
               <li><span class="pipe-tag pipe-llm">LLM</span><div><strong>结构化解读</strong><p><code>deepseek-flash</code>，temperature 0.2，JSON 模式输出情绪分、定调、分市场要点、风险与纪律提示。</p></div></li>

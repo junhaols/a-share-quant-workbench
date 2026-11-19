@@ -143,6 +143,125 @@
         ]
       }
     },
+    "global": {
+      "market_id": "global",
+      "market_name": "港股市场 (HK)",
+      "currency": "HK$",
+      "as_of_date": "2026-11-19",
+      "trading_days_total": 1534,
+      "default_cash": 100000,
+      "lot_size": 100,
+      "etfs": [
+        {
+          "code": "3110.HK",
+          "name": "GX恒生高股息",
+          "role": "高股息防御",
+          "close": 29.42,
+          "ret_1d_pct": -0.81,
+          "ret_5d_pct": -0.54,
+          "ret_20d_pct": 3.23,
+          "ret_60d_pct": -1.93,
+          "vol_20d_pct": 11.42,
+          "above_ma20": true,
+          "is_safe": false,
+          "lot": 50,
+          "signal_tag": "动量Top2入选"
+        },
+        {
+          "code": "2800.HK",
+          "name": "盈富基金",
+          "role": "恒指大盘",
+          "close": 22.94,
+          "ret_1d_pct": -2.05,
+          "ret_5d_pct": -4.81,
+          "ret_20d_pct": -0.31,
+          "ret_60d_pct": -9.66,
+          "vol_20d_pct": 21.18,
+          "above_ma20": false,
+          "is_safe": false,
+          "lot": 500,
+          "signal_tag": "中性震荡"
+        },
+        {
+          "code": "3033.HK",
+          "name": "南方恒生科技",
+          "role": "港股科技",
+          "close": 3.566,
+          "ret_1d_pct": -2.57,
+          "ret_5d_pct": -7.28,
+          "ret_20d_pct": -3.88,
+          "ret_60d_pct": -20.72,
+          "vol_20d_pct": 33.4,
+          "above_ma20": false,
+          "is_safe": false,
+          "lot": 200,
+          "signal_tag": "中性震荡"
+        },
+        {
+          "code": "3081.HK",
+          "name": "价值黄金",
+          "role": "港币黄金",
+          "close": 17.77,
+          "ret_1d_pct": -0.11,
+          "ret_5d_pct": -4.92,
+          "ret_20d_pct": -7.69,
+          "ret_60d_pct": -18.56,
+          "vol_20d_pct": 23.46,
+          "above_ma20": false,
+          "is_safe": false,
+          "lot": 100,
+          "signal_tag": "弱势观察"
+        },
+        {
+          "code": "3053.HK",
+          "name": "南方港元货币",
+          "role": "港元现金避险",
+          "close": 1195.95,
+          "ret_1d_pct": 0.04,
+          "ret_5d_pct": 0.06,
+          "ret_20d_pct": 0.24,
+          "ret_60d_pct": 0.64,
+          "vol_20d_pct": 0.69,
+          "above_ma20": true,
+          "is_safe": true,
+          "lot": 1,
+          "signal_tag": "避险入选"
+        }
+      ],
+      "momentum_signal": {
+        "rule": "20日动量 Top2 + 负动量切入避险资产",
+        "top2_candidates": [
+          {
+            "code": "3110.HK",
+            "name": "GX恒生高股息",
+            "ret_20d_pct": 3.23
+          },
+          {
+            "code": "2800.HK",
+            "name": "盈富基金",
+            "ret_20d_pct": -0.31
+          }
+        ],
+        "target_plan": [
+          {
+            "code": "3110.HK",
+            "name": "GX恒生高股息",
+            "weight_pct": 50.0,
+            "ref_price": 29.42,
+            "qty": 1650,
+            "est_amount": 48543.0
+          },
+          {
+            "code": "3053.HK",
+            "name": "南方港元货币",
+            "weight_pct": 50.0,
+            "ref_price": 1195.95,
+            "qty": 41,
+            "est_amount": 49034.0
+          }
+        ]
+      }
+    },
     "us": {
       "market_id": "us",
       "market_name": "美股市场 (US)",

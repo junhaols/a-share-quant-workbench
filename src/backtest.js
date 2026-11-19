@@ -4,7 +4,9 @@ export function runBacktest(
 ) {
   const { dates, codes, open, close } = market;
   const n = dates.length;
-  const stepLot = Math.max(1, Number(lotSize) || 1);
+  // lotSize 可以是统一数字，也可以是 { 代码: 每手股数 }（港股各 ETF 不同）
+  const lotFor = (c) =>
+    Math.max(1, Number(typeof lotSize === "object" && lotSize ? lotSize[c] : lotSize) || 1);
   let cash = initialCash;
   const shares = {};
   codes.forEach((c) => {
@@ -35,8 +37,8 @@ export function runBacktest(
           targetShares[c] = 0;
         } else {
           const budget = portVal * w * (1 - commRate - slippageRate - 0.002);
-          const lots = Math.floor(budget / (p * stepLot));
-          targetShares[c] = Math.max(0, lots * stepLot);
+          const lots = Math.floor(budget / (p * lotFor(c)));
+          targetShares[c] = Math.max(0, lots * lotFor(c));
         }
       }
 
@@ -63,8 +65,8 @@ export function runBacktest(
         if (diff > 0) {
           const rawP = execPxMap[c][i];
           const fillP = rawP * (1 + slippageRate);
-          const maxLots = Math.floor(Math.max(0, cash - minComm) / (fillP * stepLot * (1 + commRate)));
-          const qty = Math.min(diff, maxLots * stepLot);
+          const maxLots = Math.floor(Math.max(0, cash - minComm) / (fillP * lotFor(c) * (1 + commRate)));
+          const qty = Math.min(diff, maxLots * lotFor(c));
           if (qty > 0) {
             const gross = qty * fillP;
             const comm = commRate === 0 && minComm === 0 ? 0 : Math.max(minComm, gross * commRate);
