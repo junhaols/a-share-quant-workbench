@@ -130,7 +130,10 @@ function initTheme() {
 function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
   localStorage.setItem(THEME_KEY, theme);
-  document.getElementById("btn-toggle-theme").textContent = theme === "dark" ? "切换浅色" : "切换深色";
+  const themeBtn = document.getElementById("btn-toggle-theme");
+  const themeLabel = theme === "dark" ? "切换浅色" : "切换深色";
+  themeBtn.setAttribute("aria-label", themeLabel);
+  themeBtn.title = themeLabel;
   redrawCharts();
 }
 
@@ -138,6 +141,7 @@ function applyTheme(theme) {
 // GLOBAL MARKET SWITCHER & TABS
 // =========================================================================
 function renderMarketSwitcher() {
+  document.documentElement.setAttribute("data-market", state.activeMarket);
   const box = document.getElementById("market-switcher");
   box.innerHTML = MARKET_ORDER.map((id) => {
     const cfg = MARKETS[id];
@@ -174,9 +178,12 @@ function switchMarket(marketId) {
 }
 
 function switchTab(targetTab) {
-  document.querySelectorAll(".tab-btn").forEach((b) =>
-    b.setAttribute("aria-selected", b.dataset.tab === targetTab ? "true" : "false")
-  );
+  document.querySelectorAll(".tab-btn").forEach((b) => {
+    const on = b.dataset.tab === targetTab;
+    b.setAttribute("aria-selected", on ? "true" : "false");
+    b.tabIndex = on ? 0 : -1;
+    if (on) b.scrollIntoView({ block: "nearest", inline: "nearest" });
+  });
   document.querySelectorAll(".tab-panel").forEach((p) =>
     p.classList.toggle("hidden", p.id !== `tab-${targetTab}`)
   );
@@ -211,7 +218,7 @@ function renderOverview() {
               .slice(0, 3)
               .map(
                 ([k, m]) =>
-                  `<span><strong>${escapeHtml(k.split("_")[0])}</strong> <span class="font-mono" style="color:${m.cagr_pct >= 0 ? "var(--success)" : "var(--error)"}">${m.cagr_pct >= 0 ? "+" : ""}${m.cagr_pct}%</span></span>`
+                  `<span><strong>${escapeHtml(k.split("_")[0])}</strong> <span class="font-mono" style="color:${m.cagr_pct >= 0 ? "var(--up)" : "var(--down)"}">${m.cagr_pct >= 0 ? "+" : ""}${m.cagr_pct}%</span></span>`
               )
               .join("")}
           </div>
@@ -266,8 +273,8 @@ function renderOverview() {
                 <tr>
                   <td class="font-semibold">${escapeHtml(name)}</td>
                   <td class="text-right font-mono">${fmtMoney(Math.round(m.final_equity), cfg.currency)}</td>
-                  <td class="text-right font-mono font-semibold" style="color:${m.cagr_pct >= 0 ? "var(--success)" : "var(--error)"}">${m.cagr_pct >= 0 ? "+" : ""}${m.cagr_pct}%</td>
-                  <td class="text-right font-mono" style="color:var(--error)">${m.max_drawdown_pct}%</td>
+                  <td class="text-right font-mono font-semibold" style="color:${m.cagr_pct >= 0 ? "var(--up)" : "var(--down)"}">${m.cagr_pct >= 0 ? "+" : ""}${m.cagr_pct}%</td>
+                  <td class="text-right font-mono" style="color:var(--down)">${m.max_drawdown_pct}%</td>
                   <td class="text-right font-mono">${m.sharpe}</td>
                   <td class="text-right font-mono text-muted">${m.cost_ratio_pct}%</td>
                 </tr>`
@@ -432,14 +439,14 @@ function renderDailyTab() {
   if (brief) {
     const sc = Math.max(-2, Math.min(2, Number(brief.sentiment_score || 0)));
     const labels = { "-2": "极度谨慎", "-1": "偏谨慎", "0": "中性观望", "1": "偏积极", "2": "强势偏多" };
-    const scColor = sc > 0 ? "var(--success)" : sc < 0 ? "var(--error)" : "var(--muted)";
+    const scColor = sc > 0 ? "var(--up)" : sc < 0 ? "var(--down)" : "var(--muted)";
     pill.textContent = `${sc > 0 ? "+" : ""}${sc} · ${labels[String(sc)] || "中性"}`;
     pill.style.color = scColor;
     regimeBadge.textContent = `今日定调：${brief.regime || "中性观察"}`;
 
     // 5-segment sentiment meter (-2, -1, 0, +1, +2)
     const activeIdx = sc + 2;
-    const segColors = ["#dc2626", "#f59e0b", "#64748b", "#10b981", "#059669"];
+    const segColors = ["var(--down)", "var(--warning)", "var(--muted)", "var(--up)", "var(--up)"];
     meter.innerHTML = [0, 1, 2, 3, 4]
       .map((i) => `<span class="sentiment-seg" style="background:${i <= activeIdx ? segColors[activeIdx] : "var(--border)"};"></span>`)
       .join("");
@@ -522,7 +529,7 @@ function renderDailyTab() {
     `最新交易日：${snapMarket.as_of_date}${snapMarket.isDemo ? "（演示行情，GitHub Actions 每日盘后将自动拉取美股/A股真实数据）" : "（真实收盘行情）"}`;
 
   const fmtPctCell = (v) => {
-    const col = v > 0 ? "var(--error)" : v < 0 ? "var(--success)" : "var(--muted)";
+    const col = v > 0 ? "var(--up)" : v < 0 ? "var(--down)" : "var(--muted)";
     return `<span style="color:${col}; font-weight:${Math.abs(v) >= 2 ? 600 : 400};">${v > 0 ? "+" : ""}${v.toFixed(2)}%</span>`;
   };
 
@@ -686,7 +693,7 @@ function updateSandbox() {
   document.getElementById("sandbox-metrics-tbody").innerHTML = latestResults
     .map((r) => {
       const m = r.metrics;
-      const cagrColor = m.cagr >= 0 ? "var(--success)" : "var(--error)";
+      const cagrColor = m.cagr >= 0 ? "var(--up)" : "var(--down)";
       return `
         <tr>
           <td class="font-semibold whitespace-nowrap">
@@ -694,7 +701,7 @@ function updateSandbox() {
           </td>
           <td class="text-right font-mono">${fmtMoney(Math.round(m.finalEq), cfg.currency)}</td>
           <td class="text-right font-mono font-semibold" style="color:${cagrColor}">${m.cagr >= 0 ? "+" : ""}${m.cagr.toFixed(2)}%</td>
-          <td class="text-right font-mono" style="color:var(--error)">${m.maxDd.toFixed(2)}%</td>
+          <td class="text-right font-mono" style="color:var(--down)">${m.maxDd.toFixed(2)}%</td>
           <td class="text-right font-mono">${m.sharpe.toFixed(2)}</td>
           <td class="text-right font-mono">${m.trades}</td>
           <td class="text-right font-mono text-muted">${fmtMoney(Math.round(m.totalComm + m.totalSlip), cfg.currency)} (${m.costRatio.toFixed(1)}%)</td>
@@ -800,7 +807,7 @@ function executeWalkForwardLab() {
     </div>
     <div class="subcard stack-sm">
       <div class="text-xs text-muted">Walk-Forward 样本外年化</div>
-      <div class="font-mono font-semibold" style="color:${s.cagr >= 0 ? "var(--success)" : "var(--error)"}">${s.cagr >= 0 ? "+" : ""}${s.cagr.toFixed(2)}%</div>
+      <div class="font-mono font-semibold" style="color:${s.cagr >= 0 ? "var(--up)" : "var(--down)"}">${s.cagr >= 0 ? "+" : ""}${s.cagr.toFixed(2)}%</div>
       <div class="text-xs text-muted">样本外最大回撤 ${s.maxDd.toFixed(2)}%</div>
     </div>
     <div class="subcard stack-sm">
@@ -826,8 +833,8 @@ function executeWalkForwardLab() {
         <td class="font-mono font-semibold">${f.testYear} <span class="text-muted">(${f.trainWindow})</span></td>
         <td class="font-mono">${f.lookback} / ${f.rebalance}</td>
         <td class="text-right font-mono">${f.isCagr >= 0 ? "+" : ""}${f.isCagr.toFixed(1)}%</td>
-        <td class="text-right font-mono font-semibold" style="color:${f.oosCagr >= 0 ? "var(--success)" : "var(--error)"}">${f.oosCagr >= 0 ? "+" : ""}${f.oosCagr.toFixed(1)}%</td>
-        <td class="text-right font-mono" style="color:var(--error)">${f.oosMaxDd.toFixed(1)}%</td>
+        <td class="text-right font-mono font-semibold" style="color:${f.oosCagr >= 0 ? "var(--up)" : "var(--down)"}">${f.oosCagr >= 0 ? "+" : ""}${f.oosCagr.toFixed(1)}%</td>
+        <td class="text-right font-mono" style="color:var(--down)">${f.oosMaxDd.toFixed(1)}%</td>
       </tr>`
     )
     .join("");
@@ -838,7 +845,7 @@ function executeWalkForwardLab() {
       <tr>
         <td class="font-mono">偏移 +${o.offset} 天</td>
         <td class="text-right font-mono">${o.cagr >= 0 ? "+" : ""}${o.cagr.toFixed(2)}%</td>
-        <td class="text-right font-mono" style="color:var(--error)">${o.maxDd.toFixed(2)}%</td>
+        <td class="text-right font-mono" style="color:var(--down)">${o.maxDd.toFixed(2)}%</td>
         <td class="text-right font-mono">${o.sharpe.toFixed(2)}</td>
       </tr>`
     )
@@ -850,7 +857,7 @@ function executeWalkForwardLab() {
       <tr>
         <td class="font-mono">${sl.bp} bp (${(sl.bp / 100).toFixed(2)}%)</td>
         <td class="text-right font-mono">${sl.cagr >= 0 ? "+" : ""}${sl.cagr.toFixed(2)}%</td>
-        <td class="text-right font-mono" style="color:var(--error)">${sl.maxDd.toFixed(2)}%</td>
+        <td class="text-right font-mono" style="color:var(--down)">${sl.maxDd.toFixed(2)}%</td>
         <td class="text-right font-mono text-muted">${sl.costRatio.toFixed(1)}%</td>
       </tr>`
     )
@@ -883,8 +890,8 @@ function renderColabReport() {
       <tr>
         <td class="font-semibold">${escapeHtml(label)}</td>
         <td class="text-right font-mono">${fmtMoney(Math.round(m.final_equity || 0), cfg.currency)}</td>
-        <td class="text-right font-mono font-semibold" style="color:${(m.cagr_pct || 0) >= 0 ? "var(--success)" : "var(--error)"}">${(m.cagr_pct || 0) >= 0 ? "+" : ""}${m.cagr_pct}%</td>
-        <td class="text-right font-mono" style="color:var(--error)">${m.max_drawdown_pct}%</td>
+        <td class="text-right font-mono font-semibold" style="color:${(m.cagr_pct || 0) >= 0 ? "var(--up)" : "var(--down)"}">${(m.cagr_pct || 0) >= 0 ? "+" : ""}${m.cagr_pct}%</td>
+        <td class="text-right font-mono" style="color:var(--down)">${m.max_drawdown_pct}%</td>
         <td class="text-right font-mono">${m.sharpe}</td>
         <td class="text-right font-mono">${m.trade_count}</td>
         <td class="text-right font-mono text-muted">${m.cost_ratio_pct}%</td>
@@ -1117,7 +1124,7 @@ function renderJournal() {
           <tr>
             <td class="font-mono whitespace-nowrap">${escapeHtml(t.date)}</td>
             <td class="whitespace-nowrap font-semibold">${escapeHtml(t.code)} ${escapeHtml(t.name)}</td>
-            <td class="font-mono font-semibold" style="color:${t.side === "BUY" ? "var(--error)" : "var(--success)"}">${t.side === "BUY" ? "买入" : "卖出"}</td>
+            <td class="font-mono font-semibold" style="color:${t.side === "BUY" ? "var(--rise)" : "var(--fall)"}">${t.side === "BUY" ? "买入" : "卖出"}</td>
             <td class="text-right font-mono whitespace-nowrap">${cfg.currency}${Number(t.price).toFixed(3)} × ${t.qty}</td>
             <td class="text-right font-mono">${cfg.currency}${Number(t.commission).toFixed(2)}</td>
             <td class="text-muted" style="max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${escapeHtml(t.note)}">${escapeHtml(t.note || "-")}</td>
@@ -1255,6 +1262,30 @@ function getContextSnapshot(contextType) {
 // EVENT WIRING
 // =========================================================================
 function bindEvents() {
+  const tabBtns = Array.from(document.querySelectorAll(".tab-btn"));
+  document.querySelector(".tabs-nav").addEventListener("keydown", (e) => {
+    const idx = tabBtns.indexOf(document.activeElement);
+    if (idx < 0) return;
+    let next = null;
+    if (e.key === "ArrowRight") next = (idx + 1) % tabBtns.length;
+    else if (e.key === "ArrowLeft") next = (idx - 1 + tabBtns.length) % tabBtns.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = tabBtns.length - 1;
+    if (next === null) return;
+    e.preventDefault();
+    tabBtns[next].focus();
+    switchTab(tabBtns[next].dataset.tab);
+  });
+
+  // Data menu: close after picking an item or clicking outside
+  const dataMenu = document.getElementById("data-menu");
+  dataMenu.querySelectorAll(".menu-item").forEach((it) =>
+    it.addEventListener("click", () => setTimeout(() => dataMenu.removeAttribute("open"), 0))
+  );
+  document.addEventListener("click", (e) => {
+    if (dataMenu.open && !dataMenu.contains(e.target)) dataMenu.removeAttribute("open");
+  });
+
   document.querySelectorAll(".tab-btn").forEach((btn) => {
     btn.addEventListener("click", () => switchTab(btn.dataset.tab));
   });

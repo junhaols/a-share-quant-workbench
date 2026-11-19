@@ -5,60 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QuantLab · 多市场个人量化学习与投研工作台</title>
   <meta name="description" content="多市场个人金融量化学习与投研工作台：A股/美股/港股与全球行情信号看板、Walk-Forward 样本外验证、参数热力图、AI 投研简报与模拟盘日志。" />
+  <meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0a0e15" media="(prefers-color-scheme: dark)" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232453e6'/%3E%3Cpath d='M6 22l6-7 5 4 9-11' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <script>try{var t=localStorage.getItem("antigravity_quant_theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="container stack-lg">
-
-    <!-- Top Header -->
-    <header class="card app-header">
-      <div class="stack-sm">
-        <div class="title-row">
-          <h1>QuantLab · 多市场量化学习与投研工作台</h1>
-          <span class="badge">A股 · 美股 · 港股/全球</span>
-          <span id="data-mode-badge" class="badge badge-muted">加载市场数据中...</span>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <div class="app-shell">
+    <div class="app-shell-inner">
+      <header class="app-header">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 7-9"/><path d="M15 5h4v4"/></svg>
+          </div>
+          <div class="brand-text">
+            <div class="title-row">
+              <h1>QuantLab <span class="h1-light hide-sm">多市场量化学习与投研工作台</span></h1>
+              <span id="data-mode-badge" class="badge badge-muted hide-sm">加载市场数据中...</span>
+            </div>
+            <p class="brand-sub">A股 · 美股 · 港股/全球 &nbsp;|&nbsp; GitHub Actions 盘后自动行情与 AI 简报 · Colab Pro+ GPU 联动 · 笔记与 Key 仅存本机</p>
+          </div>
         </div>
-        <p class="text-xs text-muted">
-          通用量化投研底座 + GitHub Actions 盘后自动行情/AI 简报 + Colab Pro+ GPU 联动。笔记与 API Key 仅存本机浏览器，支持 JSON 备份至 Google Drive。
-        </p>
-      </div>
-      <div class="actions-row">
-        <button id="btn-open-ai" type="button" class="btn btn-primary">AI 量化助手</button>
-        <label class="btn btn-secondary">
-          导入 Colab 回测 JSON
-          <input id="import-colab-json" type="file" accept=".json" class="hidden" />
-        </label>
-        <button id="btn-export-workspace" type="button" class="btn">导出备份</button>
-        <label class="btn">
-          恢复
-          <input id="import-workspace-json" type="file" accept=".json" class="hidden" />
-        </label>
-        <button id="btn-toggle-theme" type="button" class="btn">切换深色</button>
-      </div>
-    </header>
+        <div class="header-actions">
+          <button id="btn-open-ai" type="button" class="btn btn-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+            <span>AI 助手</span>
+          </button>
+          <details class="menu" id="data-menu">
+            <summary class="btn btn-icon" aria-label="数据导入与备份" title="数据导入与备份">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+            </summary>
+            <div class="menu-panel" role="menu">
+              <div class="menu-hint">数据导入与本地备份</div>
+              <label class="menu-item" role="menuitem">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+                导入 Colab 回测 JSON
+                <input id="import-colab-json" type="file" accept=".json" class="hidden" />
+              </label>
+              <div class="menu-sep"></div>
+              <button id="btn-export-workspace" type="button" class="menu-item" role="menuitem">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14"/></svg>
+                导出工作区备份
+              </button>
+              <label class="menu-item" role="menuitem">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                从备份恢复
+                <input id="import-workspace-json" type="file" accept=".json" class="hidden" />
+              </label>
+            </div>
+          </details>
+          <button id="btn-toggle-theme" type="button" class="btn btn-icon" aria-label="切换深色" title="切换深色">
+            <svg class="icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+            <svg class="icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          </button>
+        </div>
+      </header>
 
-    <!-- Global Market Switcher Bar -->
-    <div class="market-bar">
-      <div class="flex-inline" style="flex-wrap:wrap; gap:10px;">
-        <span class="text-xs font-semibold text-muted">当前市场工作区：</span>
-        <div id="market-switcher" class="market-pills" role="group" aria-label="切换市场"></div>
+      <!-- Global Market Switcher Bar -->
+      <div class="market-bar">
+        <div class="market-bar-left">
+          <span class="eyebrow hide-sm">市场</span>
+          <div id="market-switcher" class="market-pills" role="group" aria-label="切换市场"></div>
+        </div>
+        <div id="active-market-rule-chip" class="rule-chip"></div>
       </div>
-      <div id="active-market-rule-chip" class="text-xs text-muted"></div>
+
+      <!-- Primary Tabs -->
+      <nav class="tabs-nav" role="tablist" aria-label="工作台模块">
+          <button class="tab-btn" role="tab" id="tabbtn-overview" aria-controls="tab-overview" aria-selected="true" tabindex="0" data-tab="overview" title="1. 多市场总览"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>总览</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-daily" aria-controls="tab-daily" aria-selected="false" tabindex="-1" data-tab="daily" title="2. 每日行情与 AI 简报"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg><span>每日行情与 AI 简报</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-sandbox" aria-controls="tab-sandbox" aria-selected="false" tabindex="-1" data-tab="sandbox" title="3. 回测与 Walk-Forward 实验室"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6"/><path d="M10 3v6.5L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9.5V3"/><path d="M7 15h10"/></svg><span>回测 · Walk-Forward</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-learn" aria-controls="tab-learn" aria-selected="false" tabindex="-1" data-tab="learn" title="4. 成长路线与知识笔记"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h7a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h8z"/></svg><span>成长路线与笔记</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-journal" aria-controls="tab-journal" aria-selected="false" tabindex="-1" data-tab="journal" title="5. 多市场模拟盘日志"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><span>模拟盘日志</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-resources" aria-controls="tab-resources" aria-selected="false" tabindex="-1" data-tab="resources" title="6. 标的档案与开源生态"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg><span>标的与开源生态</span></button>
+      </nav>
     </div>
+  </div>
 
-    <!-- Primary Tabs -->
-    <nav class="tabs-nav" role="tablist" aria-label="工作台模块">
-      <button class="tab-btn" role="tab" aria-selected="true" data-tab="overview">1. 多市场总览</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="daily">2. 每日行情与 AI 简报</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="sandbox">3. 回测与 Walk-Forward 实验室</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="learn">4. 成长路线与知识笔记</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="journal">5. 多市场模拟盘日志</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="resources">6. 标的档案与开源生态</button>
-    </nav>
-
-    <main>
+  <div class="container stack-lg">
+    <main id="main">
       <!-- ==================== TAB 1: MULTI-MARKET OVERVIEW ==================== -->
-      <section id="tab-overview" class="tab-panel stack-md">
+      <section id="tab-overview" role="tabpanel" aria-labelledby="tabbtn-overview" class="tab-panel stack-md">
         <div id="overview-market-cards" class="grid-3"></div>
 
         <div class="grid-split-2-1">
@@ -81,7 +110,7 @@
             <div class="subcard stack-sm text-xs">
               <div class="flex-between">
                 <span class="font-semibold">Colab Pro+ GPU 工作台</span>
-                <span class="badge" style="color:var(--success);">已联调通过</span>
+                <span class="badge badge-live">已联调通过</span>
               </div>
               <p class="text-muted">实测节点：NVIDIA L4 (23 GB VRAM · 53 GB RAM · CUDA 13.0)，任务队列与结果回传 Drive 链路畅通。</p>
             </div>
@@ -98,7 +127,7 @@
             <div class="subcard stack-sm text-xs">
               <div class="flex-between">
                 <span class="font-semibold">模拟盘记录概览</span>
-                <button id="btn-goto-journal" type="button" class="btn-ghost" style="padding:0;">打开日志 →</button>
+                <button id="btn-goto-journal" type="button" class="btn-link">打开日志 →</button>
               </div>
               <p class="text-muted" id="overview-journal-summary"></p>
             </div>
@@ -130,7 +159,7 @@
       </section>
 
       <!-- ==================== TAB 2: DAILY MARKET & AI BRIEF ==================== -->
-      <section id="tab-daily" class="tab-panel stack-md hidden">
+      <section id="tab-daily" role="tabpanel" aria-labelledby="tabbtn-daily" class="tab-panel stack-md hidden">
         <!-- AI Post-Market Quant Brief (Editorial Scannable Layout) -->
         <div class="card stack-md">
           <div class="flex-between">
@@ -169,11 +198,11 @@
 
           <!-- Risk Alerts & Discipline Actions -->
           <div class="grid-2">
-            <div class="subcard stack-sm">
+            <div class="subcard stack-sm panel-warn">
               <h4 style="color:var(--warning);">重点风险预警</h4>
               <ul id="daily-brief-risks" class="brief-list"></ul>
             </div>
-            <div class="subcard stack-sm">
+            <div class="subcard stack-sm panel-ok">
               <h4 style="color:var(--success);">学习者纪律与观察清单</h4>
               <ul id="daily-brief-actions" class="brief-list"></ul>
             </div>
@@ -230,7 +259,7 @@
                 <tbody id="daily-plan-tbody" class="tabular-nums"></tbody>
               </table>
             </div>
-            <div class="subcard text-xs text-muted">
+            <div class="note-box">
               仅供模拟盘学习对照，不构成实盘投资建议。你可以在顶部配置 GitHub Secret <code>LLM_API_KEY</code> 让每日盘后自动由 <code>deepseek-flash</code> 生成简报。
             </div>
           </div>
@@ -238,7 +267,7 @@
       </section>
 
       <!-- ==================== TAB 3: BACKTEST & WALK-FORWARD LAB ==================== -->
-      <section id="tab-sandbox" class="tab-panel stack-md hidden">
+      <section id="tab-sandbox" role="tabpanel" aria-labelledby="tabbtn-sandbox" class="tab-panel stack-md hidden">
         <!-- Synced Colab Report Panel -->
         <div id="colab-import-panel" class="card stack-sm hidden">
           <div class="flex-between">
@@ -278,10 +307,10 @@
           </div>
 
           <div class="grid-controls text-xs">
-            <div class="stack-sm">
+            <div class="stack-sm control-block">
               <div class="flex-between">
                 <label for="ctrl-cash" class="text-muted">初始模拟资金</label>
-                <span id="val-cash" class="font-mono font-semibold tabular-nums">¥80,000</span>
+                <span id="val-cash" class="control-value tabular-nums">¥80,000</span>
               </div>
               <input id="ctrl-cash" type="range" min="20000" max="100000" step="10000" value="80000" style="width:100%;" />
               <div id="cash-range-labels" class="flex-between text-muted">
@@ -289,10 +318,10 @@
               </div>
             </div>
 
-            <div class="stack-sm">
+            <div class="stack-sm control-block">
               <div class="flex-between">
                 <label for="ctrl-rebal" class="text-muted">动量调仓周期</label>
-                <span id="val-rebal" class="font-mono font-semibold tabular-nums">每 20 交易日</span>
+                <span id="val-rebal" class="control-value tabular-nums">每 20 交易日</span>
               </div>
               <select id="ctrl-rebal" class="select">
                 <option value="2">每 2 交易日（高频手续费陷阱对比）</option>
@@ -303,14 +332,14 @@
               <p class="text-muted">对比换手频率对交易成本的放大效应</p>
             </div>
 
-            <div class="stack-sm">
+            <div class="stack-sm control-block">
               <div class="flex-between">
                 <label for="ctrl-comm" class="text-muted">佣金设置</label>
-                <span id="val-comm" class="font-mono font-semibold tabular-nums">万2.5</span>
+                <span id="val-comm" class="control-value tabular-nums">万2.5</span>
               </div>
               <div style="display:flex; gap:8px; align-items:center;">
                 <select id="ctrl-comm" class="select" style="flex:1;"></select>
-                <label class="btn" style="padding:6px 10px;">
+                <label class="toggle-row" style="width:auto;">
                   <input id="ctrl-mincomm" type="checkbox" checked />
                   <span id="label-mincomm">最低¥5</span>
                 </label>
@@ -318,12 +347,12 @@
               <p id="sandbox-stamp-note" class="text-muted"></p>
             </div>
 
-            <div class="stack-sm">
+            <div class="stack-sm control-block">
               <div class="flex-between">
                 <span class="text-muted">避坑开关：未来函数对比</span>
-                <span id="val-lookahead" class="font-mono font-semibold">已防范 (T+1)</span>
+                <span id="val-lookahead" class="control-value">已防范 (T+1)</span>
               </div>
-              <label class="btn flex-between" style="width:100%; justify-content:space-between;">
+              <label class="toggle-row">
                 <span>模拟“偷看收盘价”作弊</span>
                 <input id="ctrl-lookahead" type="checkbox" />
               </label>
@@ -346,8 +375,12 @@
             </div>
             <div id="chart-hover-readout" class="text-xs font-mono tabular-nums text-muted">悬停图表查看每日净值与回撤</div>
           </div>
-          <canvas id="canvas-equity" class="chart-canvas" style="height:260px;"></canvas>
-          <canvas id="canvas-drawdown" class="chart-canvas" style="height:120px;"></canvas>
+          <div class="chart-frame">
+            <canvas id="canvas-equity" class="chart-canvas" style="height:280px;"></canvas>
+          </div>
+          <div class="chart-frame">
+            <canvas id="canvas-drawdown" class="chart-canvas" style="height:120px;"></canvas>
+          </div>
         </div>
 
         <!-- Metrics + Diagnosis -->
@@ -386,7 +419,7 @@
               <p class="text-xs text-muted" style="margin-top:2px;">在浏览器实时对当前市场执行 42 组参数扫描、3年训练→1年样本外滚动验证，以及调仓日偏移/滑点压力测试</p>
             </div>
             <div class="actions-row">
-              <select id="wf-heatmap-metric" class="select" style="width:130px;">
+              <select id="wf-heatmap-metric" class="select" style="width:150px;">
                 <option value="sharpe" selected>热力图：夏普</option>
                 <option value="cagr">热力图：年化%</option>
               </select>
@@ -394,7 +427,8 @@
             </div>
           </div>
 
-          <div id="wf-placeholder" class="subcard text-xs text-muted">
+          <div id="wf-placeholder" class="empty-state">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             点击右上角 <strong>「运行样本外与防过拟合体检」</strong>，约 0.3 秒即可在当前市场行情上算出参数高原热力图、逐年 Walk-Forward 样本外表现（含 WFE 效率）以及调仓日偏移与滑点翻倍压力测试。
           </div>
 
@@ -478,7 +512,7 @@
       </section>
 
       <!-- ==================== TAB 4: LEARNING ROADMAP & NOTES ==================== -->
-      <section id="tab-learn" class="tab-panel stack-md hidden">
+      <section id="tab-learn" role="tabpanel" aria-labelledby="tabbtn-learn" class="tab-panel stack-md hidden">
         <div class="card stack-sm">
           <div class="flex-between">
             <div>
@@ -528,7 +562,7 @@
               <button id="btn-export-notes-md" type="button" class="btn btn-secondary">导出 Markdown</button>
             </div>
             <form id="note-form" class="stack-sm">
-              <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px;">
+              <div class="form-grid-3">
                 <input id="note-title" type="text" class="input" required placeholder="笔记标题，例如：Walk-Forward 防过拟合总结" />
                 <select id="note-market" class="select">
                   <option value="A股">A股</option>
@@ -554,7 +588,7 @@
       </section>
 
       <!-- ==================== TAB 5: MULTI-MARKET PAPER JOURNAL ==================== -->
-      <section id="tab-journal" class="tab-panel stack-md hidden">
+      <section id="tab-journal" role="tabpanel" aria-labelledby="tabbtn-journal" class="tab-panel stack-md hidden">
         <div class="grid-kpi">
           <div class="card stack-sm">
             <div class="text-xs text-muted"><span id="journal-market-label">A股市场</span> · 模拟盘初始本金</div>
@@ -643,14 +677,14 @@
       </section>
 
       <!-- ==================== TAB 6: UNIVERSE & ECOSYSTEM ==================== -->
-      <section id="tab-resources" class="tab-panel stack-md hidden">
+      <section id="tab-resources" role="tabpanel" aria-labelledby="tabbtn-resources" class="tab-panel stack-md hidden">
         <div class="card stack-sm">
           <div class="flex-between">
             <div>
               <h2 id="etf-pool-heading">标的档案库</h2>
               <p class="text-xs text-muted" style="margin-top:2px;">按市场独立维护自选 ETF / 标的池，新增后自动同步至该市场的模拟盘下拉列表</p>
             </div>
-            <input id="etf-search" type="text" class="input" style="width:220px;" placeholder="搜索代码 / 名称 / 定位..." />
+            <input id="etf-search" type="search" class="input" style="width:min(260px, 100%);" placeholder="搜索代码 / 名称 / 定位..." />
           </div>
           <div class="table-wrap">
             <table>
@@ -705,19 +739,19 @@
 
   <!-- ==================== AI QUANT ASSISTANT SLIDE-OVER DRAWER ==================== -->
   <div id="ai-backdrop" class="ai-backdrop hidden"></div>
-  <aside id="ai-drawer" class="ai-drawer hidden" aria-label="AI 量化投研助手">
-    <div class="flex-between">
+  <aside id="ai-drawer" class="ai-drawer hidden" role="dialog" aria-modal="true" aria-labelledby="ai-drawer-title">
+    <div class="ai-drawer-head">
       <div>
-        <h3>AI 量化投研助手 (BYOK 安全本地模式)</h3>
-        <span id="ai-cfg-status" class="text-xs font-mono"></span>
+        <h3 id="ai-drawer-title">AI 量化投研助手</h3>
+        <div class="text-xs text-muted" style="margin-top:2px;">BYOK 本地安全模式 · <span id="ai-cfg-status" class="font-mono"></span></div>
       </div>
       <div class="actions-row">
         <button id="btn-clear-ai-chat" type="button" class="btn">清空</button>
-        <button id="btn-close-ai" type="button" class="btn">关闭</button>
+        <button id="btn-close-ai" type="button" class="btn btn-icon" aria-label="关闭" title="关闭 (Esc)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
     </div>
 
-    <details class="subcard" open>
+    <details class="subcard" id="ai-cfg-details" open>
       <summary class="text-xs font-semibold" style="cursor:pointer;">模型与 API 配置（仅存你本机浏览器，不上传 GitHub）</summary>
       <div class="stack-sm" style="margin-top:8px;">
         <input id="ai-base-url" type="text" class="input font-mono" placeholder="OpenAI 兼容 Base URL (如 https://api.deepseek.com/v1)" />
@@ -733,15 +767,15 @@
     </details>
 
     <div class="actions-row">
-      <button type="button" class="btn" data-ai-preset="backtest">诊断回测与过拟合</button>
-      <button type="button" class="btn" data-ai-preset="daily">点评今日盘后行情</button>
-      <button type="button" class="btn" data-ai-preset="journal">复盘我的模拟盘</button>
-      <button type="button" class="btn" data-ai-preset="strategy">设计风控改良</button>
+      <button type="button" class="chip" data-ai-preset="backtest">诊断回测与过拟合</button>
+      <button type="button" class="chip" data-ai-preset="daily">点评今日盘后行情</button>
+      <button type="button" class="chip" data-ai-preset="journal">复盘我的模拟盘</button>
+      <button type="button" class="chip" data-ai-preset="strategy">设计风控改良</button>
     </div>
 
     <div id="ai-chat-messages" class="ai-chat-box"></div>
 
-    <form id="ai-chat-form" style="display:flex; gap:8px;">
+    <form id="ai-chat-form" class="composer">
       <input id="ai-prompt-input" type="text" class="input" placeholder="输入你的量化问题，例如：为什么2022年样本外失效？" required />
       <button id="ai-send-btn" type="submit" class="btn btn-primary">发送</button>
     </form>

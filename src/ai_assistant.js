@@ -112,16 +112,28 @@ export function initAiAssistant({ getContextSnapshot }) {
     }
   }
 
+  let lastFocus = null;
   function openDrawer() {
+    lastFocus = document.activeElement;
     drawer.classList.remove("hidden");
     backdrop.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
     renderMessages();
+    const cfgDetails = document.getElementById("ai-cfg-details");
+    if (cfgDetails && settings.apiKey) cfgDetails.removeAttribute("open");
+    setTimeout(() => document.getElementById("ai-prompt-input")?.focus(), 30);
   }
 
   function closeDrawer() {
     drawer.classList.add("hidden");
     backdrop.classList.add("hidden");
+    document.body.style.overflow = "";
+    if (lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
   }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !drawer.classList.contains("hidden")) closeDrawer();
+  });
 
   function renderMessages() {
     chatBox.innerHTML = messages
