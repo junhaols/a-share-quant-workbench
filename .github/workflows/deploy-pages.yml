@@ -1,8 +1,8 @@
 name: Deploy QuantLab to GitHub Pages
 
 on:
-  push:
-    branches: ["main"]
+  # GitHub Free 账号的私有仓库暂不支持自动 Pages，改为手动触发；
+  # 若后续升级 GitHub Pro 或改为公开仓库，可恢复 push: branches: ["main"]
   workflow_dispatch:
 
 permissions:
