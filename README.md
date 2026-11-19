@@ -27,12 +27,10 @@ python3 -m http.server 8080
 # 浏览器打开 http://localhost:8080
 ```
 
-## 部署说明（私有仓库）
+## 在线访问与自动部署
 
-- **GitHub Pages**（仓库已内置 `.github/workflows/deploy-pages.yml`）：若你的账号为 **GitHub Pro / Team / Enterprise**，推送 `main` 分支后会自动触发 Pages 部署。
-- **Vercel / Cloudflare Pages**（免费支持私有 GitHub 仓库，推荐）：
-  1. 登录 [Vercel](https://vercel.com/new) 或 Cloudflare Pages，授权并选择私有仓库 `junhaols/a-share-quant-workbench`；
-  2. Framework Preset 保持 `Other`（静态站点，无需构建命令），点击 Deploy；
-  3. 之后每次向 `main` 推送更新都会自动重新部署。
+- **GitHub Pages 在线地址**：https://junhaols.github.io/a-share-quant-workbench/
+- 每次向 `main` 分支推送代码或更新 `data/latest_lesson01_summary.json`，GitHub Actions (`.github/workflows/deploy-pages.yml`) 会自动重新构建并发布。
+- 也同时支持导入 Vercel / Cloudflare Pages 零配置部署（仓库已包含 `vercel.json`）。
 
 > 免责声明：本项目仅用于金融量化编程与数据分析学习，所有策略与模拟记录均不构成投资建议。
