@@ -77,6 +77,7 @@
           <button class="tab-btn" role="tab" id="tabbtn-overview" aria-controls="tab-overview" aria-selected="true" tabindex="0" data-tab="overview" title="1. 多市场总览"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span>总览</span></button>
           <button class="tab-btn" role="tab" id="tabbtn-daily" aria-controls="tab-daily" aria-selected="false" tabindex="-1" data-tab="daily" title="2. 每日行情与 AI 简报"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/></svg><span>每日行情与 AI 简报</span></button>
           <button class="tab-btn" role="tab" id="tabbtn-sandbox" aria-controls="tab-sandbox" aria-selected="false" tabindex="-1" data-tab="sandbox" title="3. 回测与 Walk-Forward 实验室"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3h6"/><path d="M10 3v6.5L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9.5V3"/><path d="M7 15h10"/></svg><span>回测 · Walk-Forward</span></button>
+          <button class="tab-btn" role="tab" id="tabbtn-llm" aria-controls="tab-llm" aria-selected="false" tabindex="-1" data-tab="llm" title="大模型量化：应用分层、本站链路、评测协议与提示词实验室"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"/><rect x="9" y="9" width="6" height="6" rx="1"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg><span>大模型量化</span></button>
           <button class="tab-btn" role="tab" id="tabbtn-learn" aria-controls="tab-learn" aria-selected="false" tabindex="-1" data-tab="learn" title="4. 成长路线与知识笔记"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 4h7a3 3 0 0 1 3 3v14a2 2 0 0 0-2-2H2z"/><path d="M22 4h-7a3 3 0 0 0-3 3v14a2 2 0 0 1 2-2h8z"/></svg><span>成长路线与笔记</span></button>
           <button class="tab-btn" role="tab" id="tabbtn-journal" aria-controls="tab-journal" aria-selected="false" tabindex="-1" data-tab="journal" title="5. 多市场模拟盘日志"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg><span>模拟盘日志</span></button>
           <button class="tab-btn" role="tab" id="tabbtn-resources" aria-controls="tab-resources" aria-selected="false" tabindex="-1" data-tab="resources" title="6. 标的档案与开源生态"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5-9 5-9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg><span>标的与开源生态</span></button>
@@ -511,6 +512,117 @@
         </div>
       </section>
 
+
+      <!-- ==================== TAB: LLM QUANT ==================== -->
+      <section id="tab-llm" role="tabpanel" aria-labelledby="tabbtn-llm" class="tab-panel stack-md hidden">
+        <div class="card llm-hero">
+          <div class="llm-hero-main">
+            <span class="eyebrow">LLM × Quant</span>
+            <h2 class="llm-hero-title">让大模型读懂数字背后的信息，而不是猜明天的涨跌</h2>
+            <p class="text-muted llm-hero-lead">大模型擅长把非结构化的文本变成结构化信号、自动化研发流程、做多角度审查；它不擅长直接预测价格，而且会把训练期间见过的历史行情“记住”。这一页把能做的事按成熟度分层，并给出本站的真实链路、评测纪律和可以直接用的提示词。</p>
+          </div>
+          <div class="llm-fit">
+            <div class="llm-fit-col llm-fit-yes">
+              <h4>适合交给 LLM</h4>
+              <ul>
+                <li>新闻、公告、研报 → 情绪与事件因子</li>
+                <li>盘后数据 → 结构化复盘与风控提示</li>
+                <li>因子假设、回测代码起草与红队审查</li>
+                <li>多角色辩论，暴露单一视角的盲点</li>
+              </ul>
+            </div>
+            <div class="llm-fit-col llm-fit-no">
+              <h4>不要交给 LLM</h4>
+              <ul>
+                <li>直接把 K 线丢进去预测明日涨跌</li>
+                <li>让模型自己计算收益率、回撤等数字</li>
+                <li>无规则约束地直接决定仓位与下单</li>
+                <li>在模型训练期内的历史上“回测”LLM 信号</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="card stack-md">
+          <div class="section-head">
+            <div>
+              <h2>五层应用地图</h2>
+              <p class="text-xs text-muted">从可以马上落地到前沿研究，每层都标注了输入输出、主要风险、开源项目和在本站的练习入口</p>
+            </div>
+          </div>
+          <div id="llm-layers" class="llm-layers"></div>
+        </div>
+
+        <div class="grid-split-2-1">
+          <div class="card stack-md">
+            <div class="section-head">
+              <div>
+                <h2>本站的大模型链路：盘后 AI 简报</h2>
+                <p class="text-xs text-muted">工作日 A 股收盘后 15:35、美股收盘后次日 05:30（北京时间）由 GitHub Actions 自动运行 <code>scripts/daily_update.py</code></p>
+              </div>
+              <span id="llm-pipeline-status" class="badge">读取中...</span>
+            </div>
+            <ol class="pipeline">
+              <li><span class="pipe-tag pipe-code">代码</span><div><strong>拉取行情</strong><p>AKShare 拉 A 股 ETF，yfinance 拉美股 ETF，写入前复权日线 JSON。</p></div></li>
+              <li><span class="pipe-tag pipe-code">代码</span><div><strong>计算指标与信号</strong><p>1/5/20 日涨跌、20 日波动率、是否站上 MA20、20 日动量 Top2 + 避险切换的目标仓位。</p></div></li>
+              <li><span class="pipe-tag pipe-code">代码</span><div><strong>压缩成上下文</strong><p>只把算好的数字和信号标签传给模型，不传原始 K 线，也不传 API Key 之外的任何账户信息。</p></div></li>
+              <li><span class="pipe-tag pipe-llm">LLM</span><div><strong>结构化解读</strong><p><code>deepseek-flash</code>，temperature 0.2，JSON 模式输出情绪分、定调、分市场要点、风险与纪律提示。</p></div></li>
+              <li><span class="pipe-tag pipe-code">代码</span><div><strong>校验与兜底</strong><p>解析 JSON 并逐字段校验；关键指标卡始终使用代码计算的数字；调用失败或没有 Key 时自动回退到规则引擎。</p></div></li>
+              <li><span class="pipe-tag pipe-code">代码</span><div><strong>归档与展示</strong><p>写入 <code>daily_snapshot.json</code> 和近 30 天的 <code>ai_brief_history.json</code>，推送后网页自动刷新。</p></div></li>
+            </ol>
+            <p class="text-xs text-muted">设计原则：数字由代码负责，文字由模型负责，任何一步失败都不会让网页出现编造的数字。</p>
+          </div>
+
+          <div class="card stack-sm">
+            <div class="flex-between">
+              <h3>LLM 信号评测协议</h3>
+              <span id="llm-eval-progress" class="font-mono text-xs font-semibold tabular-nums">0 / 8</span>
+            </div>
+            <p class="text-xs text-muted">把 LLM 信号放进回测之前，逐条勾选。勾选状态保存在本机浏览器。</p>
+            <div class="progress-track"><div id="llm-eval-bar" class="progress-fill" style="width:0%;"></div></div>
+            <div id="llm-eval-list" class="stack-sm" style="padding-top:4px;"></div>
+          </div>
+        </div>
+
+        <div class="card stack-md">
+          <div class="section-head">
+            <div>
+              <h2>大模型量化的七个陷阱</h2>
+              <p class="text-xs text-muted">每一个都会让回测看起来比实盘好得多</p>
+            </div>
+          </div>
+          <div id="llm-pitfalls" class="grid-3"></div>
+        </div>
+
+        <div class="card stack-md" id="llm-prompt-lab">
+          <div class="section-head">
+            <div>
+              <h2>提示词实验室</h2>
+              <p class="text-xs text-muted">选择一个任务模板，修改输入后复制使用，或直接发送给右上角的 AI 助手（会自动附带当前工作台的上下文数据）</p>
+            </div>
+          </div>
+          <div class="prompt-lab">
+            <div id="llm-template-list" class="template-list" role="radiogroup" aria-label="提示词模板"></div>
+            <div class="stack-sm prompt-editor">
+              <div id="llm-input-wrap" class="stack-sm">
+                <label for="llm-input" id="llm-input-label" class="text-xs font-semibold">输入</label>
+                <textarea id="llm-input" class="textarea" rows="4"></textarea>
+              </div>
+              <div class="flex-between">
+                <label for="llm-prompt-preview" class="text-xs font-semibold">生成的提示词（可直接修改）</label>
+                <span id="llm-ctx-note" class="text-xs text-muted"></span>
+              </div>
+              <textarea id="llm-prompt-preview" class="textarea font-mono prompt-preview" rows="12"></textarea>
+              <div class="actions-row" style="justify-content:flex-end;">
+                <span id="llm-copy-status" class="text-xs text-muted" aria-live="polite"></span>
+                <button id="btn-llm-copy" type="button" class="btn">复制提示词</button>
+                <button id="btn-llm-send" type="button" class="btn btn-primary">发送给 AI 助手</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- ==================== TAB 4: LEARNING ROADMAP & NOTES ==================== -->
       <section id="tab-learn" role="tabpanel" aria-labelledby="tabbtn-learn" class="tab-panel stack-md hidden">
         <div class="card stack-sm">
@@ -717,14 +829,18 @@
 
         <div class="card stack-sm">
           <div class="flex-between">
-            <h3>跨市场量化开源项目与数据源收藏</h3>
-            <span class="text-xs text-muted">覆盖 AI 量化、回测引擎、A股/美股/Crypto 数据与实盘框架</span>
+            <div>
+              <h3>跨市场量化开源项目与数据源收藏</h3>
+              <p class="text-xs text-muted" style="margin-top:2px;">点击卡片标题即可在新标签页打开项目主页；覆盖大模型量化、回测引擎、实盘框架与数据源</p>
+            </div>
+            <div id="res-filter" class="seg-filter" role="group" aria-label="筛选资源分类"></div>
           </div>
           <div id="resources-grid" class="grid-3"></div>
-          <form id="res-add-form" class="form-grid-4" style="padding-top:10px; border-top:1px solid var(--border);">
+          <form id="res-add-form" class="form-grid-5" style="padding-top:10px; border-top:1px solid var(--border);">
             <input id="res-name" type="text" class="input" required placeholder="资料/项目名称" />
-            <input id="res-cat" type="text" class="input" required placeholder="分类（如 开源框架 / 书籍 / 数据源）" />
-            <input id="res-desc" type="text" class="input" required placeholder="一句话说明、适用市场或链接记录" />
+            <input id="res-cat" type="text" class="input" required placeholder="分类（如 开源框架 / 数据源）" />
+            <input id="res-url" type="url" class="input" placeholder="链接（可选）https://..." />
+            <input id="res-desc" type="text" class="input" required placeholder="一句话说明与适用市场" />
             <button type="submit" class="btn btn-secondary">沉淀新资料</button>
           </form>
         </div>

@@ -5,6 +5,7 @@ import {
   DEFAULT_ROADMAP,
   DEFAULT_RESOURCES,
   DEFAULT_NOTES,
+  LLM_EVAL_CHECKLIST,
   createInitialMarketStates,
   generateCalibratedMarket,
 } from "./data.js";
@@ -16,6 +17,7 @@ import {
   runStressTests,
 } from "./walkforward.js";
 import { initAiAssistant } from "./ai_assistant.js";
+import { LLM_LAYERS, LLM_PITFALLS, PROMPT_TEMPLATES } from "./llm_lab.js";
 
 const THEME_KEY = "antigravity_quant_theme";
 
@@ -25,6 +27,45 @@ let hoverIdx = null;
 let dailySnapshotData = null;
 let aiBriefHistoryData = [];
 let lastWalkForwardCache = null;
+let aiApi = null;
+let resFilter = "all";
+let llmTemplateId = "news";
+const llmInputs = Object.fromEntries(PROMPT_TEMPLATES.filter((t) => t.example).map((t) => [t.id, t.example]));
+
+// 旧版本默认收藏的名称：用于判断哪些新默认条目需要补进老用户的本地数据
+const LEGACY_DEFAULT_RESOURCE_NAMES = [
+  "Microsoft Qlib", "NautilusTrader", "VectorBT", "AKShare / BaoStock", "yfinance / FRED",
+  "VeighNa (vn.py)", "QuantConnect LEAN", "QuantStats / Alphalens", "Freqtrade / CCXT",
+];
+
+function migrateState(st) {
+  // 1) 路线图：补上新增阶段的条目，保留已有勾选状态
+  const haveRoad = new Set(st.roadmap.map((x) => x.id));
+  for (const item of DEFAULT_ROADMAP) {
+    if (!haveRoad.has(item.id)) st.roadmap.push(structuredClone(item));
+  }
+  // 2) 资源：给老条目补链接/分组；新默认条目只补一次（用户删掉的不会再回来）
+  const defaultsByName = Object.fromEntries(DEFAULT_RESOURCES.map((r) => [r.name, r]));
+  for (const r of st.resources) {
+    const d = defaultsByName[r.name];
+    if (d) {
+      if (!r.url && d.url) r.url = d.url;
+      if (!r.links && d.links) r.links = structuredClone(d.links);
+      if (!r.group && d.group) r.group = d.group;
+    }
+  }
+  const seen = new Set(Array.isArray(st.seenResourceNames) ? st.seenResourceNames : LEGACY_DEFAULT_RESOURCE_NAMES);
+  const have = new Set(st.resources.map((r) => r.name));
+  const fresh = DEFAULT_RESOURCES.filter((d) => !seen.has(d.name) && !have.has(d.name)).map((d) => structuredClone(d));
+  if (fresh.length) {
+    const llmFresh = fresh.filter((d) => d.group === "llm");
+    const otherFresh = fresh.filter((d) => d.group !== "llm");
+    st.resources = [...llmFresh, ...st.resources, ...otherFresh];
+  }
+  st.seenResourceNames = DEFAULT_RESOURCES.map((d) => d.name);
+  if (!st.llmChecklist || typeof st.llmChecklist !== "object") st.llmChecklist = {};
+  return st;
+}
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (s) => ({
@@ -60,6 +101,8 @@ function loadState() {
         roadmap: parsed.roadmap || structuredClone(DEFAULT_ROADMAP),
         notes: parsed.notes || structuredClone(DEFAULT_NOTES),
         resources: parsed.resources || structuredClone(DEFAULT_RESOURCES),
+        seenResourceNames: parsed.seenResourceNames,
+        llmChecklist: parsed.llmChecklist || {},
         markets: baseMarkets,
       };
     }
@@ -91,7 +134,7 @@ function loadState() {
   };
 }
 
-let state = loadState();
+let state = migrateState(loadState());
 function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -575,6 +618,7 @@ async function loadDailySnapshots() {
     if (resp2.ok) aiBriefHistoryData = await resp2.json();
   } catch (_) {}
   renderDailyTab();
+  renderLlmPipelineStatus();
 }
 
 // =========================================================================
@@ -1183,24 +1227,77 @@ function renderEtfs() {
   });
 }
 
+const RES_GROUPS = [
+  { id: "all", label: "全部" },
+  { id: "llm", label: "大模型量化" },
+  { id: "engine", label: "平台与回测" },
+  { id: "data", label: "数据源" },
+  { id: "custom", label: "我的收藏" },
+];
+
+const EXT_ICON = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>`;
+
+function safeUrl(url) {
+  if (!url) return "";
+  try {
+    const u = new URL(String(url).trim());
+    return u.protocol === "http:" || u.protocol === "https:" ? u.href : "";
+  } catch (_) {
+    return "";
+  }
+}
+
+function urlHost(url) {
+  try {
+    const u = new URL(url);
+    return (u.host + u.pathname).replace(/^www\./, "").replace(/\/$/, "");
+  } catch (_) {
+    return "";
+  }
+}
+
 function renderResources() {
+  const groupOf = (r) => r.group || "custom";
+  const counts = { all: state.resources.length };
+  state.resources.forEach((r) => { counts[groupOf(r)] = (counts[groupOf(r)] || 0) + 1; });
+  if (resFilter !== "all" && !counts[resFilter]) resFilter = "all";
+
+  const filterEl = document.getElementById("res-filter");
+  filterEl.innerHTML = RES_GROUPS.filter((g) => g.id === "all" || counts[g.id])
+    .map((g) => `<button type="button" data-res-filter="${g.id}" aria-pressed="${resFilter === g.id}">${g.label} <span class="text-muted">${counts[g.id] || 0}</span></button>`)
+    .join("");
+  filterEl.querySelectorAll("[data-res-filter]").forEach((btn) =>
+    btn.addEventListener("click", () => { resFilter = btn.dataset.resFilter; renderResources(); })
+  );
+
   document.getElementById("resources-grid").innerHTML = state.resources
-    .map(
-      (r, idx) => `
-      <div class="subcard" style="display:flex; flex-direction:column; justify-content:space-between; gap:10px;">
-        <div class="stack-sm">
-          <div class="flex-between">
-            <span class="font-semibold">${escapeHtml(r.name)}</span>
-            <span class="badge">${escapeHtml(r.cat)}</span>
-          </div>
-          ${r.markets ? `<div class="text-xs text-muted">适用市场：${escapeHtml(r.markets)}</div>` : ""}
-          <p class="text-xs text-muted" style="line-height:1.6;">${escapeHtml(r.desc)}</p>
+    .map((r, idx) => ({ r, idx }))
+    .filter(({ r }) => resFilter === "all" || groupOf(r) === resFilter)
+    .map(({ r, idx }) => {
+      const url = safeUrl(r.url);
+      const extra = (r.links || [])
+        .map((l) => ({ label: l.label, url: safeUrl(l.url) }))
+        .filter((l) => l.url)
+        .map((l) => `<a class="link-chip" href="${escapeHtml(l.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(l.label)} ${EXT_ICON}</a>`)
+        .join("");
+      const title = url
+        ? `<a class="res-card-title" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" title="在新标签页打开 ${escapeHtml(urlHost(url))}">${escapeHtml(r.name)} ${EXT_ICON}</a>`
+        : `<span class="res-card-title">${escapeHtml(r.name)}</span>`;
+      return `
+      <div class="subcard res-card ${url ? "is-link" : ""}">
+        <div class="flex-between" style="align-items:flex-start;">
+          ${title}
+          <span class="badge">${escapeHtml(r.cat)}</span>
         </div>
-        <div style="display:flex; justify-content:flex-end;">
+        ${r.markets ? `<div class="text-xs text-muted">适用市场：${escapeHtml(r.markets)}</div>` : ""}
+        <p class="text-xs text-muted" style="line-height:1.65;">${escapeHtml(r.desc)}</p>
+        ${extra ? `<div class="llm-links" style="position:relative; z-index:1;">${extra}</div>` : ""}
+        <div class="res-foot">
+          <span class="res-host">${url ? escapeHtml(urlHost(url)) : "未填写链接"}</span>
           <button type="button" class="btn-ghost" data-del-res="${idx}">删除</button>
         </div>
-      </div>`
-    )
+      </div>`;
+    })
     .join("");
 
   document.querySelectorAll("[data-del-res]").forEach((btn) => {
@@ -1209,6 +1306,177 @@ function renderResources() {
       saveState();
       renderResources();
     });
+  });
+}
+
+// =========================================================================
+// TAB: LLM QUANT
+// =========================================================================
+const MATURITY = {
+  ready: { label: "可落地", cls: "maturity-ready" },
+  lab: { label: "可实验", cls: "maturity-lab" },
+  frontier: { label: "前沿研究", cls: "maturity-frontier" },
+};
+
+function renderLlmTab() {
+  document.getElementById("llm-layers").innerHTML = LLM_LAYERS.map((L) => {
+    const m = MATURITY[L.maturity];
+    const projects = L.projects
+      .map((p) => `<a class="link-chip" href="${escapeHtml(p.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(p.label)} ${EXT_ICON}</a>`)
+      .join("");
+    const practice = L.practice
+      .map((p) => `<button type="button" class="chip" data-llm-practice="${p.type}:${p.id}">${escapeHtml(p.label)} →</button>`)
+      .join("");
+    return `
+      <article class="llm-layer">
+        <div class="llm-layer-idx">${L.id}</div>
+        <div>
+          <h3>${escapeHtml(L.title)} <span class="maturity ${m.cls}">${m.label}</span></h3>
+          <p>${escapeHtml(L.what)}</p>
+        </div>
+        <div class="llm-kv">
+          <div><b>输入</b>　${escapeHtml(L.io.in)}</div>
+          <div><b>输出</b>　${escapeHtml(L.io.out)}</div>
+          <div><b>主要风险</b>　${escapeHtml(L.risk)}</div>
+        </div>
+        <div>
+          <div class="llm-links">${projects}</div>
+          <div class="llm-links" style="margin-top:8px;">${practice}</div>
+        </div>
+      </article>`;
+  }).join("");
+
+  document.querySelectorAll("[data-llm-practice]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const [type, id] = btn.dataset.llmPractice.split(":");
+      if (type === "tab") {
+        switchTab(id);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        llmTemplateId = id;
+        renderPromptLab();
+        document.getElementById("llm-prompt-lab").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    });
+  });
+
+  document.getElementById("llm-pitfalls").innerHTML = LLM_PITFALLS.map(
+    (p, i) => `
+      <div class="subcard pitfall">
+        <h4><span class="pitfall-n">0${i + 1}</span>${escapeHtml(p.title)}</h4>
+        <p>${escapeHtml(p.body)}</p>
+        <div class="fix"><b>对策</b>　${escapeHtml(p.fix)}</div>
+      </div>`
+  ).join("");
+
+  renderLlmChecklist();
+  renderLlmPipelineStatus();
+  renderPromptLab();
+}
+
+function renderLlmChecklist() {
+  const done = LLM_EVAL_CHECKLIST.filter((c) => state.llmChecklist[c.id]).length;
+  document.getElementById("llm-eval-progress").textContent = `${done} / ${LLM_EVAL_CHECKLIST.length}`;
+  document.getElementById("llm-eval-bar").style.width = `${Math.round((done / LLM_EVAL_CHECKLIST.length) * 100)}%`;
+  const list = document.getElementById("llm-eval-list");
+  list.innerHTML = LLM_EVAL_CHECKLIST.map(
+    (c) => `
+    <label class="check-row ${state.llmChecklist[c.id] ? "is-done" : ""}">
+      <input type="checkbox" data-llm-eval="${c.id}" ${state.llmChecklist[c.id] ? "checked" : ""} />
+      <span>${escapeHtml(c.text)}</span>
+    </label>`
+  ).join("");
+  list.querySelectorAll("[data-llm-eval]").forEach((el) =>
+    el.addEventListener("change", () => {
+      state.llmChecklist[el.dataset.llmEval] = el.checked;
+      saveState();
+      renderLlmChecklist();
+    })
+  );
+}
+
+function renderLlmPipelineStatus() {
+  const el = document.getElementById("llm-pipeline-status");
+  if (!el) return;
+  const brief = dailySnapshotData?.ai_brief;
+  if (!brief) {
+    el.className = "badge badge-muted";
+    el.textContent = "等待首次盘后运行";
+    return;
+  }
+  const when = (brief.generated_at_utc || dailySnapshotData.updated_at_utc || "").slice(0, 16).replace("T", " ");
+  if (brief.source === "llm") {
+    el.className = "badge badge-live";
+    el.textContent = `最近一次由 ${brief.model} 生成 · ${when} UTC`;
+  } else {
+    el.className = "badge";
+    el.textContent = `最近一次使用规则引擎兜底 · ${when} UTC`;
+  }
+}
+
+function getLlmTemplate() {
+  return PROMPT_TEMPLATES.find((t) => t.id === llmTemplateId) || PROMPT_TEMPLATES[0];
+}
+
+function buildLlmPrompt() {
+  const tpl = getLlmTemplate();
+  const input = (llmInputs[tpl.id] || "").trim() || "（请在上方填写输入）";
+  return tpl.build({ market: getActiveCfg().label, input });
+}
+
+function renderPromptLab() {
+  const tpl = getLlmTemplate();
+  const listEl = document.getElementById("llm-template-list");
+  listEl.innerHTML = PROMPT_TEMPLATES.map(
+    (t) => `
+    <button type="button" class="template-item" role="radio" aria-checked="${t.id === tpl.id}" data-llm-tpl="${t.id}">
+      <strong>${escapeHtml(t.title)}</strong>
+      <span>${escapeHtml(t.desc)}</span>
+    </button>`
+  ).join("");
+  listEl.querySelectorAll("[data-llm-tpl]").forEach((btn) =>
+    btn.addEventListener("click", () => { llmTemplateId = btn.dataset.llmTpl; renderPromptLab(); })
+  );
+
+  const wrap = document.getElementById("llm-input-wrap");
+  const needsInput = Boolean(tpl.inputLabel);
+  wrap.classList.toggle("hidden", !needsInput);
+  if (needsInput) {
+    document.getElementById("llm-input-label").textContent = tpl.inputLabel;
+    document.getElementById("llm-input").value = llmInputs[tpl.id] || "";
+  }
+  const ctxText = {
+    minimal: "发送时附带：当前市场与沙盒回测摘要",
+    daily: "发送时附带：当前市场的盘后行情快照",
+    backtest: lastWalkForwardCache && lastWalkForwardCache.marketId === state.activeMarket
+      ? "发送时附带：回测结果 + Walk-Forward 验证"
+      : "发送时附带：回测结果（建议先在回测页运行 Walk-Forward）",
+  }[tpl.ctx];
+  document.getElementById("llm-ctx-note").textContent = ctxText || "";
+  document.getElementById("llm-prompt-preview").value = buildLlmPrompt();
+  document.getElementById("llm-copy-status").textContent = "";
+}
+
+function bindLlmEvents() {
+  document.getElementById("llm-input").addEventListener("input", (e) => {
+    llmInputs[llmTemplateId] = e.target.value;
+    document.getElementById("llm-prompt-preview").value = buildLlmPrompt();
+  });
+  document.getElementById("btn-llm-copy").addEventListener("click", async () => {
+    const ta = document.getElementById("llm-prompt-preview");
+    const status = document.getElementById("llm-copy-status");
+    try {
+      await navigator.clipboard.writeText(ta.value);
+      status.textContent = "已复制到剪贴板";
+    } catch (_) {
+      ta.focus();
+      ta.select();
+      status.textContent = "已全选，请按 Ctrl/⌘ + C 复制";
+    }
+  });
+  document.getElementById("btn-llm-send").addEventListener("click", () => {
+    const text = document.getElementById("llm-prompt-preview").value.trim();
+    if (text && aiApi) aiApi.ask(text, getLlmTemplate().ctx);
   });
 }
 
@@ -1508,6 +1776,11 @@ function bindEvents() {
     state.resources.push({
       name: document.getElementById("res-name").value.trim(),
       cat: document.getElementById("res-cat").value.trim(),
+      url: (() => {
+        const raw = document.getElementById("res-url").value.trim();
+        if (!raw) return "";
+        return safeUrl(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+      })(),
       markets: getActiveCfg().shortName,
       desc: document.getElementById("res-desc").value.trim(),
     });
@@ -1530,12 +1803,14 @@ function renderAll() {
   renderEtfs();
   renderJournal();
   renderResources();
+  renderLlmTab();
 }
 
 initTheme();
 syncControlsToMarket();
 bindEvents();
-initAiAssistant({ getContextSnapshot });
+aiApi = initAiAssistant({ getContextSnapshot });
+bindLlmEvents();
 renderAll();
 loadDailySnapshots();
 MARKET_ORDER.forEach((id) => ensureMarketDataLoaded(id));

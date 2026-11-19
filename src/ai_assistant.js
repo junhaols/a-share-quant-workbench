@@ -150,15 +150,20 @@ export function initAiAssistant({ getContextSnapshot }) {
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 
+  let pendingQuestion = null;
+
   async function sendQuestion(userText, contextType = "general") {
     const trimmed = userText.trim();
     if (!trimmed) return;
     if (!settings.apiKey) {
+      pendingQuestion = { text: trimmed, contextType };
       messages.push({
         role: "assistant",
-        content: "请先在上方「模型与 API 配置」中粘贴你在 /Users/fiona/Workspace/.env 里的 API Key 并点「保存本地配置」。放心，Key 只保存在你自己的浏览器 localStorage 中，不会提交到任何仓库。",
+        content: "请先在上方「模型与 API 配置」中粘贴你在 /Users/fiona/Workspace/.env 里的 API Key 并点「保存本地配置」。保存后会自动发送刚才的问题。放心，Key 只保存在你自己的浏览器 localStorage 中，不会提交到任何仓库。",
       });
+      document.getElementById("ai-cfg-details")?.setAttribute("open", "");
       renderMessages();
+      keyInput.focus();
       return;
     }
 
@@ -232,6 +237,11 @@ export function initAiAssistant({ getContextSnapshot }) {
     };
     saveAiSettings(settings);
     updateCfgStatus();
+    if (settings.apiKey && pendingQuestion) {
+      const q = pendingQuestion;
+      pendingQuestion = null;
+      sendQuestion(q.text, q.contextType);
+    }
   });
 
   form.addEventListener("submit", (e) => {
@@ -260,4 +270,12 @@ export function initAiAssistant({ getContextSnapshot }) {
   });
 
   renderMessages();
+
+  return {
+    open: openDrawer,
+    ask(text, contextType = "general") {
+      openDrawer();
+      sendQuestion(text, contextType);
+    },
+  };
 }

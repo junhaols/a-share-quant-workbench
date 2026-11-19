@@ -16,18 +16,46 @@ export const DEFAULT_ROADMAP = [
   { id: "s4_1", stage: "第 4 阶段 · AI 量化进阶与模拟实盘", market: "A股", text: "在东方财富坚持 1–3 个月低频模拟跟踪，记录每笔调仓信号与心态复盘", done: false },
   { id: "s4_2", stage: "第 4 阶段 · AI 量化进阶与模拟实盘", market: "通用", text: "利用已联调成功的 Colab Pro+ GPU (L4/A100/G4) 运行 Microsoft Qlib / LightGBM 多因子实验", done: false },
   { id: "s4_3", stage: "第 4 阶段 · AI 量化进阶与模拟实盘", market: "美股", text: "探索跨市场组合（A 股 + 美股 + 黄金 + 债券）与 LLM 财报/研报情绪因子提取", done: false },
+  { id: "s5_1", stage: "第 5 阶段 · 大模型量化实战", market: "通用", text: "读懂本站盘后简报链路：数字由代码计算，大模型只负责结构化解读，失败自动回退规则引擎", done: false },
+  { id: "s5_2", stage: "第 5 阶段 · 大模型量化实战", market: "A股", text: "用提示词实验室把 50 条新闻/公告打成 JSON 情绪分，检验它与次日 (T+1) 收益的相关性", done: false },
+  { id: "s5_3", stage: "第 5 阶段 · 大模型量化实战", market: "通用", text: "只在模型知识截止日之后的数据上评测 LLM 信号，并与“不用 LLM”的基线对比", done: false },
+  { id: "s5_4", stage: "第 5 阶段 · 大模型量化实战", market: "通用", text: "在 Colab 跑通 RD-Agent 或 TradingAgents 的官方示例，记录成本、耗时与可复现性", done: false },
+];
+
+export const LLM_EVAL_CHECKLIST = [
+  { id: "e1", text: "评测区间全部晚于模型的训练数据截止日（否则等同于未来函数）" },
+  { id: "e2", text: "输入里隐去或替换标的名称与具体日期，防止模型“认出”历史行情" },
+  { id: "e3", text: "文本按发布时间对齐，信号在 T 日生成，最早 T+1 开盘成交" },
+  { id: "e4", text: "固定模型版本、temperature ≤ 0.2，并记录提示词版本与输入哈希" },
+  { id: "e5", text: "输出强制 JSON Schema，解析失败的样本计入统计而不是丢弃" },
+  { id: "e6", text: "同一输入采样 3 次以上，报告结果的一致性" },
+  { id: "e7", text: "提示词只在训练段调整，样本外段只跑一次（提示词也会过拟合）" },
+  { id: "e8", text: "与不用 LLM 的规则/因子基线对比，并扣除 API 成本与交易成本" },
 ];
 
 export const DEFAULT_RESOURCES = [
-  { name: "Microsoft Qlib", cat: "AI 量化平台", markets: "A股 / 美股", desc: "微软开源 AI 量化基础设施，内置 Alpha158 因子、LightGBM/深度时序模型与回测，契合 Colab GPU。" },
-  { name: "NautilusTrader", cat: "现代回测引擎", markets: "全市场", desc: "Rust 核心 + Python 接口，回测与实盘同代码架构，支持股票、期货、外汇与 Crypto。" },
-  { name: "VectorBT", cat: "向量化回测", markets: "全市场", desc: "基于 NumPy/Numba 的高速参数扫描库，适合快速验证多市场 ETF 轮动与规则策略。" },
-  { name: "AKShare / BaoStock", cat: "免费数据源", markets: "A股 / 港股 / 宏观", desc: "零成本拉取 A 股复权日线、ETF 行情、财报与宏观指标的必备 Python 数据库。" },
-  { name: "yfinance / FRED", cat: "免费数据源", markets: "美股 / 全球", desc: "拉取美股/港股/全球 ETF 历史行情与美联储利率、CPI 等宏观经济序列。" },
-  { name: "VeighNa (vn.py)", cat: "实盘交易框架", markets: "A股 / 国内期货", desc: "国内最成熟的开源实盘交易框架，支持合规券商接口（QMT/CTP）与多策略管理。" },
-  { name: "QuantConnect LEAN", cat: "机构级引擎", markets: "美股 / 期权 / 期货", desc: "开源多资产量化引擎，支持 Python 策略与美股/期权/外汇精细建模。" },
-  { name: "QuantStats / Alphalens", cat: "绩效与因子分析", markets: "全市场", desc: "一键生成专业夏普/回撤/月度收益热力图，以及单因子 IC/IR 分层检验。" },
-  { name: "Freqtrade / CCXT", cat: "扩展生态", markets: "Crypto 7×24h", desc: "若未来扩展到加密货币策略，CCXT 与 Freqtrade 是最成熟的开源行情与自动化框架。" },
+  // ---- 大模型量化 ----
+  { group: "llm", name: "Microsoft RD-Agent", cat: "LLM 因子研发 Agent", markets: "A股 / 美股", url: "https://github.com/microsoft/RD-Agent", desc: "让大模型自动提出因子与模型假设、写代码、在 Qlib 上回测并迭代，是“LLM 做研发而不是直接预测”的代表。" },
+  { group: "llm", name: "TradingAgents", cat: "LLM 多智能体", markets: "美股为主", url: "https://github.com/TauricResearch/TradingAgents", desc: "模拟基本面/情绪/技术分析师、多空研究员辩论与风控经理的多智能体交易框架，适合学习投研流程的分工。" },
+  { group: "llm", name: "AI Hedge Fund", cat: "LLM 多智能体", markets: "美股", url: "https://github.com/virattt/ai-hedge-fund", desc: "以多位“投资风格”智能体 + 风控 + 组合经理组成的教学型项目，代码短小，适合读懂多 Agent 编排。" },
+  { group: "llm", name: "FinGPT", cat: "金融大模型", markets: "全市场", url: "https://github.com/AI4Finance-Foundation/FinGPT", desc: "开源金融大模型与微调方案，覆盖新闻情绪分类、金融问答等任务，可作为文本情绪因子的基线。" },
+  { group: "llm", name: "FinRobot", cat: "LLM 投研 Agent", markets: "美股 / 全球", url: "https://github.com/AI4Finance-Foundation/FinRobot", desc: "面向财报分析、研报生成的金融 Agent 平台，示范如何把数据工具调用与 LLM 推理串成工作流。" },
+  { group: "llm", name: "Kronos", cat: "金融时序基础模型", markets: "全市场", url: "https://github.com/shiyu-coder/Kronos", desc: "在多市场 K 线上预训练的金融时序基础模型，可做预测或特征提取；需严格样本外检验，警惕预训练数据覆盖测试期。" },
+  { group: "llm", name: "TimesFM / Chronos", cat: "通用时序基础模型", markets: "全市场", url: "https://github.com/google-research/timesfm", links: [{ label: "Chronos", url: "https://github.com/amazon-science/chronos-forecasting" }], desc: "Google 与 Amazon 开源的零样本时序预测模型，可作为波动率或成交量预测的对照基线，不宜直接用来猜涨跌。" },
+  { group: "llm", name: "FinRL", cat: "强化学习交易", markets: "全市场", url: "https://github.com/AI4Finance-Foundation/FinRL", desc: "金融强化学习框架，常与 LLM 情绪信号组合做仓位决策实验，适合进阶对照。" },
+  { group: "llm", name: "OpenBB", cat: "开放投研平台", markets: "美股 / 全球", url: "https://github.com/OpenBB-finance/OpenBB", desc: "开源投研数据平台，统一接入多家数据源，并提供给 AI Agent 调用的数据接口。" },
+  // ---- 平台、回测与实盘 ----
+  { group: "engine", name: "Microsoft Qlib", cat: "AI 量化平台", markets: "A股 / 美股", url: "https://github.com/microsoft/qlib", desc: "微软开源 AI 量化基础设施，内置 Alpha158 因子、LightGBM/深度时序模型与回测，契合 Colab GPU。" },
+  { group: "engine", name: "NautilusTrader", cat: "现代回测引擎", markets: "全市场", url: "https://github.com/nautechsystems/nautilus_trader", desc: "Rust 核心 + Python 接口，回测与实盘同代码架构，支持股票、期货、外汇与 Crypto。" },
+  { group: "engine", name: "VectorBT", cat: "向量化回测", markets: "全市场", url: "https://github.com/polakowo/vectorbt", desc: "基于 NumPy/Numba 的高速参数扫描库，适合快速验证多市场 ETF 轮动与规则策略。" },
+  { group: "engine", name: "VeighNa (vn.py)", cat: "实盘交易框架", markets: "A股 / 国内期货", url: "https://github.com/vnpy/vnpy", desc: "国内最成熟的开源实盘交易框架，支持合规券商接口（QMT/CTP）与多策略管理。" },
+  { group: "engine", name: "QuantConnect LEAN", cat: "机构级引擎", markets: "美股 / 期权 / 期货", url: "https://github.com/QuantConnect/Lean", desc: "开源多资产量化引擎，支持 Python 策略与美股/期权/外汇精细建模。" },
+  { group: "engine", name: "QuantStats / Alphalens", cat: "绩效与因子分析", markets: "全市场", url: "https://github.com/ranaroussi/quantstats", links: [{ label: "Alphalens", url: "https://github.com/stefan-jansen/alphalens-reloaded" }], desc: "一键生成专业夏普/回撤/月度收益热力图，以及单因子 IC/IR 分层检验。" },
+  { group: "engine", name: "Freqtrade / CCXT", cat: "扩展生态", markets: "Crypto 7×24h", url: "https://github.com/freqtrade/freqtrade", links: [{ label: "CCXT", url: "https://github.com/ccxt/ccxt" }], desc: "若未来扩展到加密货币策略，CCXT 与 Freqtrade 是最成熟的开源行情与自动化框架。" },
+  // ---- 数据源 ----
+  { group: "data", name: "AKShare / BaoStock", cat: "免费数据源", markets: "A股 / 港股 / 宏观", url: "https://github.com/akfamily/akshare", links: [{ label: "BaoStock", url: "http://baostock.com" }], desc: "零成本拉取 A 股复权日线、ETF 行情、财报与宏观指标的必备 Python 数据库。" },
+  { group: "data", name: "yfinance / FRED", cat: "免费数据源", markets: "美股 / 全球", url: "https://github.com/ranaroussi/yfinance", links: [{ label: "FRED", url: "https://fred.stlouisfed.org" }], desc: "拉取美股/港股/全球 ETF 历史行情与美联储利率、CPI 等宏观经济序列。" },
+  { group: "data", name: "Tushare Pro", cat: "进阶数据源", markets: "A股 / 港股 / 期货", url: "https://tushare.pro", desc: "积分制的 A 股结构化数据服务，财务、公告、资金流等字段更完整，适合给 LLM 提供干净的结构化输入。" },
 ];
 
 export const DEFAULT_NOTES = [
