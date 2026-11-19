@@ -10,13 +10,21 @@ import {
 } from "./data.js";
 import { runBacktest, buildStrategyWeights } from "./backtest.js";
 import { drawLineChart } from "./charts.js";
+import {
+  runParameterGrid,
+  runWalkForwardAnalysis,
+  runStressTests,
+} from "./walkforward.js";
+import { initAiAssistant } from "./ai_assistant.js";
 
 const THEME_KEY = "antigravity_quant_theme";
 
-// Market series cache: { cn: { dates, codes, open, close, isReal }, us: ..., global: ... }
 const marketSeriesCache = {};
 let latestResults = [];
 let hoverIdx = null;
+let dailySnapshotData = null;
+let aiBriefHistoryData = [];
+let lastWalkForwardCache = null;
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (s) => ({
@@ -44,10 +52,7 @@ function loadState() {
       const baseMarkets = createInitialMarketStates();
       for (const id of MARKET_ORDER) {
         if (parsed.markets?.[id]) {
-          baseMarkets[id] = {
-            ...baseMarkets[id],
-            ...parsed.markets[id],
-          };
+          baseMarkets[id] = { ...baseMarkets[id], ...parsed.markets[id] };
         }
       }
       return {
@@ -59,7 +64,6 @@ function loadState() {
       };
     }
 
-    // One-time migration from v1 A-share-only storage
     const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
     if (legacyRaw) {
       const old = JSON.parse(legacyRaw);
@@ -76,9 +80,7 @@ function loadState() {
         markets: baseMarkets,
       };
     }
-  } catch (_) {
-    // ignore storage errors
-  }
+  } catch (_) {}
 
   return {
     activeMarket: "cn",
@@ -93,9 +95,7 @@ let state = loadState();
 function saveState() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch (_) {
-    // ignore quota errors
-  }
+  } catch (_) {}
 }
 
 function getActiveCfg() {
@@ -135,7 +135,7 @@ function applyTheme(theme) {
 }
 
 // =========================================================================
-// GLOBAL MARKET SWITCHER & OVERVIEW
+// GLOBAL MARKET SWITCHER & TABS
 // =========================================================================
 function renderMarketSwitcher() {
   const box = document.getElementById("market-switcher");
@@ -164,6 +164,9 @@ function switchMarket(marketId) {
   if (!MARKETS[marketId]) return;
   state.activeMarket = marketId;
   hoverIdx = null;
+  lastWalkForwardCache = null;
+  document.getElementById("wf-results-container").classList.add("hidden");
+  document.getElementById("wf-placeholder").classList.remove("hidden");
   saveState();
   syncControlsToMarket();
   renderAll();
@@ -180,6 +183,9 @@ function switchTab(targetTab) {
   if (targetTab === "sandbox") setTimeout(redrawCharts, 20);
 }
 
+// =========================================================================
+// TAB 1: OVERVIEW
+// =========================================================================
 function renderOverview() {
   const cardsEl = document.getElementById("overview-market-cards");
   cardsEl.innerHTML = MARKET_ORDER.map((id) => {
@@ -230,7 +236,6 @@ function renderOverview() {
     card.addEventListener("click", () => switchMarket(card.dataset.overviewMarket));
   });
 
-  // Overview Colab Snapshot for active market
   const cfg = getActiveCfg();
   const ms = getActiveMarketState();
   const rep = ms.colabReport;
@@ -275,12 +280,10 @@ function renderOverview() {
     metaEl.textContent = `${cfg.shortName}尚未导入 Colab 真实回测 JSON，当前沙盒使用多周期教学演示行情`;
     bodyEl.innerHTML = `
       <div class="subcard text-xs text-muted stack-sm">
-        <p>你可以立即点击右上角<strong>「进入实时沙盒深度调节」</strong>体验 ${escapeHtml(cfg.shortName)} ETF 策略对比，或让我为你生成对应的 Colab 数据拉取与回测 Notebook（自动使用 <code>${escapeHtml(cfg.dataSources)}</code>）。</p>
-        <p>生成并运行后，将结果 JSON 导入顶部按钮，即可像 A 股一样在这里展示真实历史体检表。</p>
+        <p>你可以立即进入「回测与 Walk-Forward 实验室」体验 ${escapeHtml(cfg.shortName)} ETF 策略对比，或由 GitHub Actions 每日盘后自动拉取该市场真实行情（<code>${escapeHtml(cfg.dataSources)}</code>）。</p>
       </div>`;
   }
 
-  // Learning progress + journal summary
   const doneCnt = state.roadmap.filter((x) => x.done).length;
   const pct = Math.round((doneCnt / Math.max(1, state.roadmap.length)) * 100);
   document.getElementById("overview-learn-pct").textContent = `${doneCnt}/${state.roadmap.length} (${pct}%)`;
@@ -291,7 +294,6 @@ function renderOverview() {
   document.getElementById("overview-journal-summary").textContent =
     `当前 ${cfg.shortName} 已记 ${ms.trades.length} 笔模拟单（全市场合计 ${totalTradesAll} 笔），初始模拟本金 ${fmtMoney(ms.journalCapital, cfg.currency)}。`;
 
-  // Cross-market rules table
   document.getElementById("overview-rules-tbody").innerHTML = MARKET_ORDER.map((id) => {
     const c = MARKETS[id];
     return `
@@ -308,7 +310,175 @@ function renderOverview() {
 }
 
 // =========================================================================
-// SANDBOX CONTROLS & CHARTS
+// TAB 2: DAILY POST-MARKET QUOTES & AI BRIEF
+// =========================================================================
+function buildFallbackDailyMarket(marketId) {
+  const cfg = MARKETS[marketId];
+  const series = getSeriesForMarket(marketId);
+  const dates = series.dates;
+  const n = dates.length;
+  const rows = cfg.defaultEtfs.map((item) => {
+    const arr = series.close[item.code];
+    const px = arr[n - 1];
+    const r1 = n >= 2 ? (arr[n - 1] / arr[n - 2] - 1) * 100 : 0;
+    const r5 = n >= 6 ? (arr[n - 1] / arr[n - 6] - 1) * 100 : 0;
+    const r20 = n >= 21 ? (arr[n - 1] / arr[n - 21] - 1) * 100 : 0;
+    const r60 = n >= 61 ? (arr[n - 1] / arr[n - 61] - 1) * 100 : 0;
+    let vol20 = 0;
+    if (n >= 21) {
+      const dr = [];
+      for (let i = n - 20; i < n; i++) dr.push(arr[i] / arr[i - 1] - 1);
+      const mean = dr.reduce((a, b) => a + b, 0) / dr.length;
+      const v = dr.reduce((a, b) => a + (b - mean) ** 2, 0) / dr.length;
+      vol20 = Math.sqrt(v * 252) * 100;
+    }
+    return {
+      code: item.code,
+      name: item.name,
+      role: item.role,
+      close: Number(px.toFixed(3)),
+      ret_1d_pct: Number(r1.toFixed(2)),
+      ret_5d_pct: Number(r5.toFixed(2)),
+      ret_20d_pct: Number(r20.toFixed(2)),
+      ret_60d_pct: Number(r60.toFixed(2)),
+      vol_20d_pct: Number(vol20.toFixed(2)),
+      is_safe: item.code === cfg.safeCode,
+      signal_tag: "观察中",
+    };
+  });
+  const risk = rows.filter((r) => !r.is_safe).sort((a, b) => b.ret_20d_pct - a.ret_20d_pct);
+  const top2 = risk.slice(0, 2);
+  const weights = {};
+  for (const r of top2) {
+    const ch = r.ret_20d_pct > 0 ? r.code : cfg.safeCode;
+    weights[ch] = (weights[ch] || 0) + 0.5;
+  }
+  const byCode = Object.fromEntries(rows.map((r) => [r.code, r]));
+  const plan = Object.entries(weights).map(([c, wt]) => {
+    const px = byCode[c].close;
+    const qty = Math.floor((cfg.defaultCash * wt) / (px * cfg.lotSize)) * cfg.lotSize;
+    return { code: c, name: byCode[c].name, weight_pct: wt * 100, ref_price: px, qty, est_amount: Number((qty * px).toFixed(1)) };
+  });
+  for (const r of rows) {
+    if (weights[r.code]) r.signal_tag = r.is_safe ? "避险入选" : "动量Top2入选";
+    else if (r.ret_20d_pct > 0) r.signal_tag = "趋势偏强";
+    else if (r.ret_20d_pct < -5) r.signal_tag = "弱势观察";
+    else r.signal_tag = "中性震荡";
+  }
+  return {
+    market_id: marketId,
+    market_name: cfg.label,
+    currency: cfg.currency,
+    as_of_date: dates[n - 1],
+    default_cash: cfg.defaultCash,
+    etfs: rows.sort((a, b) => Number(a.is_safe) - Number(b.is_safe) || b.ret_20d_pct - a.ret_20d_pct),
+    momentum_signal: {
+      rule: "20日动量 Top2 + 负动量切入避险资产",
+      target_plan: plan,
+    },
+    isDemo: !series.isReal,
+  };
+}
+
+function renderDailyTab() {
+  const cfg = getActiveCfg();
+  const snapMarket = dailySnapshotData?.markets?.[state.activeMarket] || buildFallbackDailyMarket(state.activeMarket);
+  const brief = dailySnapshotData?.ai_brief;
+
+  // Render AI Brief
+  const pill = document.getElementById("daily-sentiment-pill");
+  if (brief) {
+    const sc = Number(brief.sentiment_score || 0);
+    const scColor = sc > 0 ? "var(--success)" : sc < 0 ? "var(--error)" : "var(--muted)";
+    pill.textContent = `情绪评分 ${sc > 0 ? "+" : ""}${sc} / 2 · ${brief.regime || "中性"}`;
+    pill.style.color = scColor;
+    document.getElementById("daily-brief-meta").textContent =
+      `模型来源：${brief.model || brief.source} | 更新时间：${(brief.generated_at_utc || "").slice(0, 16).replace("T", " ")} UTC`;
+    document.getElementById("daily-brief-summary").textContent = brief.summary || "";
+    document.getElementById("daily-brief-risks").innerHTML = (brief.risk_alerts || [])
+      .map((x) => `<li>${escapeHtml(x)}</li>`)
+      .join("");
+    document.getElementById("daily-brief-actions").innerHTML = (brief.action_notes || [])
+      .map((x) => `<li>${escapeHtml(x)}</li>`)
+      .join("");
+  } else {
+    pill.textContent = "等待首次自动简报";
+    document.getElementById("daily-brief-summary").textContent = "暂无已同步的盘后简报，请触发 GitHub Actions Daily Update。";
+  }
+
+  // History archive
+  const histEl = document.getElementById("daily-brief-history");
+  histEl.innerHTML = aiBriefHistoryData.length
+    ? aiBriefHistoryData
+        .map(
+          (h) => `
+        <div class="subcard text-xs stack-sm">
+          <div class="flex-between">
+            <span class="font-mono font-semibold">${escapeHtml(h.date || "")} · ${escapeHtml(h.regime || "")}</span>
+            <span class="badge">${escapeHtml(h.model || h.source || "")} · 评分 ${h.sentiment_score > 0 ? "+" : ""}${h.sentiment_score}</span>
+          </div>
+          <p class="text-muted">${escapeHtml(h.summary || "")}</p>
+        </div>`
+        )
+        .join("")
+    : `<p class="text-xs text-muted">暂无历史简报记录，每日盘后自动更新后将按天沉淀在这里。</p>`;
+
+  // Render Quotes table
+  document.getElementById("daily-quotes-title").textContent = `${cfg.label} · 盘后核心 ETF 行情与动量监控`;
+  document.getElementById("daily-quotes-meta").textContent =
+    `最新交易日：${snapMarket.as_of_date}${snapMarket.isDemo ? "（演示行情，GitHub Actions 每日盘后将自动拉取美股/A股真实数据）" : "（真实收盘行情）"}`;
+
+  const fmtPctCell = (v) => {
+    const col = v > 0 ? "var(--error)" : v < 0 ? "var(--success)" : "var(--muted)";
+    return `<span style="color:${col}; font-weight:${Math.abs(v) >= 2 ? 600 : 400};">${v > 0 ? "+" : ""}${v.toFixed(2)}%</span>`;
+  };
+
+  document.getElementById("daily-quotes-tbody").innerHTML = snapMarket.etfs
+    .map(
+      (e) => `
+      <tr>
+        <td class="whitespace-nowrap"><span class="font-mono font-semibold">${escapeHtml(e.code)}</span> ${escapeHtml(e.name)}</td>
+        <td class="text-muted whitespace-nowrap">${escapeHtml(e.role)}</td>
+        <td class="text-right font-mono">${cfg.currency}${Number(e.close).toFixed(3)}</td>
+        <td class="text-right font-mono">${fmtPctCell(e.ret_1d_pct)}</td>
+        <td class="text-right font-mono">${fmtPctCell(e.ret_5d_pct)}</td>
+        <td class="text-right font-mono">${fmtPctCell(e.ret_20d_pct)}</td>
+        <td class="text-right font-mono text-muted">${Number(e.vol_20d_pct).toFixed(1)}%</td>
+        <td class="text-right"><span class="badge">${escapeHtml(e.signal_tag)}</span></td>
+      </tr>`
+    )
+    .join("");
+
+  document.getElementById("daily-signal-rule").textContent =
+    `规则：${snapMarket.momentum_signal.rule}（按参考本金 ${fmtMoney(snapMarket.default_cash, cfg.currency)} 计算）`;
+
+  document.getElementById("daily-plan-tbody").innerHTML = (snapMarket.momentum_signal.target_plan || [])
+    .map(
+      (p) => `
+      <tr>
+        <td class="font-semibold whitespace-nowrap">${escapeHtml(p.code)} ${escapeHtml(p.name)}</td>
+        <td class="text-right font-mono">${p.weight_pct}%</td>
+        <td class="text-right font-mono">${Number(p.qty).toLocaleString()}</td>
+        <td class="text-right font-mono">${fmtMoney(Math.round(p.est_amount), cfg.currency)}</td>
+      </tr>`
+    )
+    .join("");
+}
+
+async function loadDailySnapshots() {
+  try {
+    const resp = await fetch("./data/daily_snapshot.json", { cache: "no-store" });
+    if (resp.ok) dailySnapshotData = await resp.json();
+  } catch (_) {}
+  try {
+    const resp2 = await fetch("./data/ai_brief_history.json", { cache: "no-store" });
+    if (resp2.ok) aiBriefHistoryData = await resp2.json();
+  } catch (_) {}
+  renderDailyTab();
+}
+
+// =========================================================================
+// TAB 3: SANDBOX + WALK-FORWARD LAB
 // =========================================================================
 function syncControlsToMarket() {
   const cfg = getActiveCfg();
@@ -400,7 +570,7 @@ function updateSandbox() {
   document.getElementById("sandbox-subtitle").textContent =
     `${dateSpan}（${series.dates.length} 交易日 · 最小 ${cfg.lotSize} 股整数倍）`;
   document.getElementById("chart-title-line").textContent =
-    `${cfg.shortName}净值曲线与回撤对比（${series.isReal ? "Colab 真实数据" : "演示数据"}）`;
+    `${cfg.shortName}净值曲线与回撤对比（${series.isReal ? "真实数据" : "演示数据"}）`;
 
   const defs = buildStrategyWeights(series, cfg, rebalEvery);
   latestResults = defs.map((d) => ({
@@ -420,8 +590,7 @@ function updateSandbox() {
     .map((r) => `<span><span class="dot" style="background:var(${r.colorVar})"></span>${escapeHtml(r.name)}</span>`)
     .join("");
 
-  const tbody = document.getElementById("sandbox-metrics-tbody");
-  tbody.innerHTML = latestResults
+  document.getElementById("sandbox-metrics-tbody").innerHTML = latestResults
     .map((r) => {
       const m = r.metrics;
       const cagrColor = m.cagr >= 0 ? "var(--success)" : "var(--error)";
@@ -441,42 +610,158 @@ function updateSandbox() {
     .join("");
 
   document.getElementById("sandbox-footnote").textContent = series.isReal
-    ? `当前沙盒正在直接对 Colab 拉取的 ${cfg.shortName} 真实前复权日线（${dateSpan}）进行逐日事件驱动回测。`
-    : `当前 ${cfg.shortName} 沙盒使用多周期校准演示行情；在 Colab 拉取该市场真实行情 JSON 放入 ${cfg.realDataUrl} 后会自动切换为真实历史数据。`;
+    ? `当前沙盒正在直接对 ${cfg.shortName} 真实前复权日线（${dateSpan}）进行逐日事件驱动回测。`
+    : `当前 ${cfg.shortName} 沙盒使用多周期校准演示行情；每日 GitHub Actions 运行后会自动拉取真实行情。`;
 
   const [s1, s2, s3] = latestResults;
   const diag = [];
   diag.push(
-    `<li><strong>多资产降回撤效果：</strong>单一基准（S1）最大回撤 <span class="font-mono">${s1.metrics.maxDd.toFixed(1)}%</span>，而全天候平衡（S2）将最大回撤控制在 <span class="font-mono">${s2.metrics.maxDd.toFixed(1)}%</span>，大幅改善持有体验。</li>`
+    `<li><strong>多资产降回撤效果：</strong>单一基准（S1）最大回撤 <span class="font-mono">${s1.metrics.maxDd.toFixed(1)}%</span>，全天候平衡（S2）将最大回撤压缩至 <span class="font-mono">${s2.metrics.maxDd.toFixed(1)}%</span>。</li>`
   );
   if (rebalEvery <= 5) {
     diag.push(
-      `<li><strong style="color:var(--warning)">高频换手磨损警示：</strong>每 ${rebalEvery} 天调仓使 S3 产生 <span class="font-mono">${s3.metrics.trades}</span> 笔交易，佣金+滑点占初始本金高达 <span class="font-mono">${s3.metrics.costRatio.toFixed(1)}%</span>。</li>`
+      `<li><strong style="color:var(--warning)">高频换手磨损警示：</strong>每 ${rebalEvery} 天调仓使 S3 产生 <span class="font-mono">${s3.metrics.trades}</span> 笔交易，总费用占初始本金高达 <span class="font-mono">${s3.metrics.costRatio.toFixed(1)}%</span>。</li>`
     );
   } else {
     diag.push(
-      `<li><strong>调仓成本评估：</strong>每 ${rebalEvery} 交易日调仓下，S3 交易 <span class="font-mono">${s3.metrics.trades}</span> 笔，总交易成本占本金 <span class="font-mono">${s3.metrics.costRatio.toFixed(1)}%</span>，便于个人低频半自动跟踪。</li>`
-    );
-  }
-  if (cfg.id === "cn" && initialCash <= 30000) {
-    diag.push(
-      `<li><strong style="color:var(--warning)">A股整手门槛提示：</strong>当前资金 ¥${initialCash.toLocaleString()}，国债 ETF (511010) 1 手约需 ¥14,100，仓位会有现金冗余；对比切到「美股市场」可以看到 1 股起步的灵活性差异。</li>`
+      `<li><strong>调仓成本评估：</strong>每 ${rebalEvery} 交易日调仓下，S3 交易 <span class="font-mono">${s3.metrics.trades}</span> 笔，总交易成本占本金 <span class="font-mono">${s3.metrics.costRatio.toFixed(1)}%</span>。</li>`
     );
   }
   if (lookahead) {
     diag.push(
-      `<li><strong style="color:var(--warning)">未来函数已开启：</strong>当前 S3 年化 <span class="font-mono">${s3.metrics.cagr.toFixed(2)}%</span> 含收盘瞬间成交假设，仅供识别陷阱对比，切勿用于实盘决策。</li>`
+      `<li><strong style="color:var(--warning)">未来函数已开启：</strong>当前 S3 年化 <span class="font-mono">${s3.metrics.cagr.toFixed(2)}%</span> 含收盘瞬间成交假设，切勿用于实盘。</li>`
     );
   }
   document.getElementById("sandbox-diagnosis").innerHTML = diag.join("");
 
-  // Header status badge
-  const badge = document.getElementById("data-mode-badge");
-  badge.textContent = series.isReal
+  document.getElementById("data-mode-badge").textContent = series.isReal
     ? `${cfg.shortName} · 真实行情 (${dateSpan})`
-    : `${cfg.shortName} · 演示行情（可导 Colab JSON）`;
+    : `${cfg.shortName} · 演示行情`;
 
   redrawCharts();
+}
+
+function heatBg(val, minV, maxV) {
+  const ratio = Math.max(0, Math.min(1, (val - minV) / Math.max(1e-6, maxV - minV)));
+  // Red (low) -> Amber (mid) -> Emerald (high) with readable contrast
+  if (ratio >= 0.5) {
+    const t = (ratio - 0.5) * 2;
+    return `rgba(16, 185, 129, ${(0.12 + t * 0.36).toFixed(2)})`;
+  }
+  const t = (0.5 - ratio) * 2;
+  return `rgba(239, 68, 68, ${(0.08 + t * 0.30).toFixed(2)})`;
+}
+
+function renderWalkForwardHeatmap() {
+  if (!lastWalkForwardCache) return;
+  const { grid } = lastWalkForwardCache;
+  const metric = document.getElementById("wf-heatmap-metric").value;
+  const allVals = grid.matrix.flat().map((c) => c[metric]);
+  const minV = Math.min(...allVals);
+  const maxV = Math.max(...allVals);
+
+  const head = `<thead><tr><th>lb \\ rb</th>${grid.rebalances.map((r) => `<th class="text-right">${r}d</th>`).join("")}</tr></thead>`;
+  const body = grid.matrix
+    .map((row, rIdx) => {
+      const lb = grid.lookbacks[rIdx];
+      const cells = row
+        .map((c) => {
+          const val = c[metric];
+          const text = metric === "cagr" ? `${val.toFixed(1)}%` : val.toFixed(2);
+          const isBest = c.lookback === grid.best.lookback && c.rebalance === grid.best.rebalance;
+          return `<td><div class="hm-cell" style="background:${heatBg(val, minV, maxV)}; ${isBest ? "outline:1.5px solid var(--primary);" : ""}" title="lb=${c.lookback}, rb=${c.rebalance} | CAGR ${c.cagr.toFixed(1)}% | Sharpe ${c.sharpe.toFixed(2)} | MaxDD ${c.maxDd.toFixed(1)}%">${text}</div></td>`;
+        })
+        .join("");
+      return `<tr><td class="font-mono font-semibold">${lb}d</td>${cells}</tr>`;
+    })
+    .join("");
+
+  document.getElementById("wf-heatmap-table").innerHTML = `${head}<tbody>${body}</tbody>`;
+}
+
+function executeWalkForwardLab() {
+  const cfg = getActiveCfg();
+  const series = getSeriesForMarket(state.activeMarket);
+  const opts = {
+    initialCash: Number(document.getElementById("ctrl-cash").value),
+    commRate: Number(document.getElementById("ctrl-comm").value),
+    minComm: document.getElementById("ctrl-mincomm").checked ? cfg.defaultMinComm : 0.0,
+    slippageRate: 0.0005,
+  };
+
+  const grid = runParameterGrid(series, cfg, opts);
+  const wf = runWalkForwardAnalysis(series, cfg, opts, 3);
+  const stress = runStressTests(series, cfg, opts);
+  lastWalkForwardCache = { marketId: state.activeMarket, grid, wf, stress };
+
+  document.getElementById("wf-placeholder").classList.add("hidden");
+  document.getElementById("wf-results-container").classList.remove("hidden");
+
+  // KPI Strip
+  const s = wf.oosSummary;
+  document.getElementById("wf-kpi-strip").innerHTML = `
+    <div class="subcard stack-sm">
+      <div class="text-xs text-muted">全样本冠军 vs 42组中位数</div>
+      <div class="font-mono font-semibold">${grid.best.cagr.toFixed(1)}% vs ${grid.medianCagr.toFixed(1)}%</div>
+      <div class="text-xs text-muted">冠军 (${grid.best.lookback}/${grid.best.rebalance}) 高出 +${(grid.best.cagr - grid.medianCagr).toFixed(1)}%</div>
+    </div>
+    <div class="subcard stack-sm">
+      <div class="text-xs text-muted">Walk-Forward 样本外年化</div>
+      <div class="font-mono font-semibold" style="color:${s.cagr >= 0 ? "var(--success)" : "var(--error)"}">${s.cagr >= 0 ? "+" : ""}${s.cagr.toFixed(2)}%</div>
+      <div class="text-xs text-muted">样本外最大回撤 ${s.maxDd.toFixed(2)}%</div>
+    </div>
+    <div class="subcard stack-sm">
+      <div class="text-xs text-muted">WFE 样本外效率 (OOS/IS)</div>
+      <div class="font-mono font-semibold" style="color:${s.wfe >= 0.5 ? "var(--success)" : "var(--warning)"}">${s.wfe.toFixed(2)}</div>
+      <div class="text-xs text-muted">${s.wfe >= 0.5 ? "≥ 0.50 及格线（有一定适应力）" : "< 0.50 存在明显过拟合衰减"}</div>
+    </div>
+    <div class="subcard stack-sm">
+      <div class="text-xs text-muted">同期固定经典 20/20 对照</div>
+      <div class="font-mono font-semibold">${wf.fixed20Summary ? `${wf.fixed20Summary.cagr.toFixed(2)}%` : "-"}</div>
+      <div class="text-xs text-muted">回撤 ${wf.fixed20Summary ? `${wf.fixed20Summary.maxDd.toFixed(2)}%` : "-"}</div>
+    </div>`;
+
+  document.getElementById("wf-grid-gap").textContent =
+    `冠军(${grid.best.lookback}/${grid.best.rebalance}) 夏普 ${grid.best.sharpe.toFixed(2)} · 中位数 ${grid.medianSharpe.toFixed(2)}`;
+  renderWalkForwardHeatmap();
+
+  document.getElementById("wf-wfe-badge").textContent = `WFE = ${s.wfe.toFixed(2)}`;
+  document.getElementById("wf-folds-tbody").innerHTML = wf.folds
+    .map(
+      (f) => `
+      <tr>
+        <td class="font-mono font-semibold">${f.testYear} <span class="text-muted">(${f.trainWindow})</span></td>
+        <td class="font-mono">${f.lookback} / ${f.rebalance}</td>
+        <td class="text-right font-mono">${f.isCagr >= 0 ? "+" : ""}${f.isCagr.toFixed(1)}%</td>
+        <td class="text-right font-mono font-semibold" style="color:${f.oosCagr >= 0 ? "var(--success)" : "var(--error)"}">${f.oosCagr >= 0 ? "+" : ""}${f.oosCagr.toFixed(1)}%</td>
+        <td class="text-right font-mono" style="color:var(--error)">${f.oosMaxDd.toFixed(1)}%</td>
+      </tr>`
+    )
+    .join("");
+
+  document.getElementById("wf-offset-tbody").innerHTML = stress.offsets
+    .map(
+      (o) => `
+      <tr>
+        <td class="font-mono">偏移 +${o.offset} 天</td>
+        <td class="text-right font-mono">${o.cagr >= 0 ? "+" : ""}${o.cagr.toFixed(2)}%</td>
+        <td class="text-right font-mono" style="color:var(--error)">${o.maxDd.toFixed(2)}%</td>
+        <td class="text-right font-mono">${o.sharpe.toFixed(2)}</td>
+      </tr>`
+    )
+    .join("");
+
+  document.getElementById("wf-slip-tbody").innerHTML = stress.slippages
+    .map(
+      (sl) => `
+      <tr>
+        <td class="font-mono">${sl.bp} bp (${(sl.bp / 100).toFixed(2)}%)</td>
+        <td class="text-right font-mono">${sl.cagr >= 0 ? "+" : ""}${sl.cagr.toFixed(2)}%</td>
+        <td class="text-right font-mono" style="color:var(--error)">${sl.maxDd.toFixed(2)}%</td>
+        <td class="text-right font-mono text-muted">${sl.costRatio.toFixed(1)}%</td>
+      </tr>`
+    )
+    .join("");
 }
 
 function renderColabReport() {
@@ -527,7 +812,6 @@ async function ensureMarketDataLoaded(marketId) {
   const cfg = MARKETS[marketId];
   if (!cfg) return;
 
-  // 1) Try loading synced real historical daily prices
   if (!marketSeriesCache[marketId]?.isReal && cfg.realDataUrl) {
     try {
       const resp = await fetch(cfg.realDataUrl, { cache: "no-store" });
@@ -544,16 +828,14 @@ async function ensureMarketDataLoaded(marketId) {
           if (state.activeMarket === marketId) {
             renderMarketSwitcher();
             renderOverview();
+            renderDailyTab();
             updateSandbox();
           }
         }
       }
-    } catch (_) {
-      // Keep fallback series
-    }
+    } catch (_) {}
   }
 
-  // 2) Try loading synced Colab summary report
   if (cfg.colabReportUrl) {
     try {
       const resp = await fetch(cfg.colabReportUrl, { cache: "no-store" });
@@ -572,14 +854,12 @@ async function ensureMarketDataLoaded(marketId) {
           }
         }
       }
-    } catch (_) {
-      // No static summary for this market yet
-    }
+    } catch (_) {}
   }
 }
 
 // =========================================================================
-// ROADMAP & NOTES
+// TAB 4, 5, 6: ROADMAP, JOURNAL, UNIVERSE
 // =========================================================================
 function renderRoadmap() {
   const stages = {};
@@ -661,9 +941,6 @@ function renderNotes() {
   });
 }
 
-// =========================================================================
-// MULTI-MARKET PAPER TRADING JOURNAL
-// =========================================================================
 function renderJournal() {
   const cfg = getActiveCfg();
   const ms = getActiveMarketState();
@@ -767,9 +1044,6 @@ function renderJournal() {
   });
 }
 
-// =========================================================================
-// ETF ARCHIVE & OPEN-SOURCE ECOSYSTEM
-// =========================================================================
 function renderEtfs() {
   const cfg = getActiveCfg();
   const ms = getActiveMarketState();
@@ -849,6 +1123,42 @@ function downloadText(filename, content, mime = "application/json") {
 }
 
 // =========================================================================
+// CONTEXT SNAPSHOT FOR AI ASSISTANT
+// =========================================================================
+function getContextSnapshot(contextType) {
+  const cfg = getActiveCfg();
+  const ms = getActiveMarketState();
+  const base = {
+    active_market: cfg.label,
+    currency: cfg.currencyCode,
+    lot_size: cfg.lotSize,
+    sandbox_strategies: latestResults.map((r) => ({ name: r.name, ...r.metrics })),
+  };
+  if (contextType === "backtest" || contextType === "general") {
+    if (ms.colabReport) base.colab_real_report = ms.colabReport;
+    if (lastWalkForwardCache && lastWalkForwardCache.marketId === state.activeMarket) {
+      base.walk_forward = {
+        best_in_sample: lastWalkForwardCache.grid.best,
+        median_cagr: lastWalkForwardCache.grid.medianCagr,
+        oos_summary: lastWalkForwardCache.wf.oosSummary,
+        folds: lastWalkForwardCache.wf.folds,
+        offset_stress: lastWalkForwardCache.stress.offsets,
+      };
+    }
+  }
+  if (contextType === "daily" || contextType === "general") {
+    base.daily_snapshot = dailySnapshotData?.markets?.[state.activeMarket] || buildFallbackDailyMarket(state.activeMarket);
+  }
+  if (contextType === "journal" || contextType === "general") {
+    base.paper_journal = {
+      capital: ms.journalCapital,
+      trades: ms.trades.slice(-15),
+    };
+  }
+  return base;
+}
+
+// =========================================================================
 // EVENT WIRING
 // =========================================================================
 function bindEvents() {
@@ -857,7 +1167,11 @@ function bindEvents() {
   });
 
   document.getElementById("btn-goto-sandbox").addEventListener("click", () => switchTab("sandbox"));
+  document.getElementById("btn-goto-daily").addEventListener("click", () => switchTab("daily"));
   document.getElementById("btn-goto-journal").addEventListener("click", () => switchTab("journal"));
+  document.getElementById("btn-ask-ai-daily").addEventListener("click", () => {
+    document.getElementById("btn-open-ai").click();
+  });
 
   ["ctrl-cash", "ctrl-rebal", "ctrl-comm", "ctrl-mincomm", "ctrl-lookahead"].forEach((id) => {
     document.getElementById(id).addEventListener("input", updateSandbox);
@@ -866,6 +1180,9 @@ function bindEvents() {
 
   bindChartHover(document.getElementById("canvas-equity"));
   bindChartHover(document.getElementById("canvas-drawdown"));
+
+  document.getElementById("btn-run-wf").addEventListener("click", executeWalkForwardLab);
+  document.getElementById("wf-heatmap-metric").addEventListener("change", renderWalkForwardHeatmap);
 
   document.getElementById("import-colab-json").addEventListener("change", (e) => {
     const file = e.target.files?.[0];
@@ -927,14 +1244,7 @@ function bindEvents() {
     const tag = document.getElementById("note-tag").value;
     const body = document.getElementById("note-body").value.trim();
     if (!title || !body) return;
-    state.notes.unshift({
-      id: "n_" + Date.now(),
-      date: new Date().toISOString().slice(0, 10),
-      market,
-      tag,
-      title,
-      body,
-    });
+    state.notes.unshift({ id: "n_" + Date.now(), date: new Date().toISOString().slice(0, 10), market, tag, title, body });
     saveState();
     e.target.reset();
     renderNotes();
@@ -1049,6 +1359,7 @@ function bindEvents() {
 function renderAll() {
   renderMarketSwitcher();
   renderOverview();
+  renderDailyTab();
   renderColabReport();
   updateSandbox();
   renderRoadmap();
@@ -1061,6 +1372,7 @@ function renderAll() {
 initTheme();
 syncControlsToMarket();
 bindEvents();
+initAiAssistant({ getContextSnapshot });
 renderAll();
-// Auto-load real market data & Colab summary reports for all configured markets
+loadDailySnapshots();
 MARKET_ORDER.forEach((id) => ensureMarketDataLoaded(id));

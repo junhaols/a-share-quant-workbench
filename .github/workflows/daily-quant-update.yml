@@ -1,0 +1,46 @@
+name: Daily Post-Market Data & AI Quant Brief
+
+on:
+  schedule:
+    # 周一至周五 A 股收盘后 (UTC 07:35 = 北京时间 15:35)
+    - cron: "35 7 * * 1-5"
+    # 周二至周六 美股收盘后 (UTC 21:30 = 北京时间次日 05:30)
+    - cron: "30 21 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-market-and-brief:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install lightweight dependencies
+        run: pip install -q pandas numpy yfinance akshare
+
+      - name: Refresh post-market ETF data and AI brief
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL || 'deepseek-flash' }}
+        run: python3 scripts/daily_update.py
+
+      - name: Commit and push updated snapshots
+        run: |
+          git config user.name "quantlab-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "chore(data): daily post-market snapshot & AI brief"
+            git push
+          fi

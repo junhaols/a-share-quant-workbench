@@ -615,3 +615,92 @@ canvas.chart-canvas {
 .market-overview-card.is-selected {
   border-color: var(--primary);
 }
+
+/* Heatmap cells */
+.hm-cell {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 6px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* AI Assistant Slide-over Drawer */
+.ai-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 40;
+}
+
+.ai-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(480px, 100vw);
+  background-color: var(--card);
+  border-left: 1px solid var(--border);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 18px;
+  gap: 12px;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.18);
+}
+
+.ai-chat-box {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.ai-msg {
+  padding: 9px 11px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  line-height: 1.6;
+  border: 1px solid var(--border);
+}
+
+.ai-msg-user {
+  background-color: var(--secondary);
+  align-self: flex-end;
+  max-width: 90%;
+}
+
+.ai-msg-bot {
+  background-color: var(--card);
+  align-self: flex-start;
+  max-width: 96%;
+}
+
+.ai-msg-role {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+
+.ai-msg-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sentiment-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}

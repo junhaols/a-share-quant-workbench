@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QuantLab · 多市场个人量化学习与投研工作台</title>
-  <meta name="description" content="通用多市场个人金融量化学习与投研工作台：支持 A 股、美股、港股与跨市场回测沙盒、Colab GPU 数据联动、成长路径笔记与多市场模拟盘日志。" />
+  <meta name="description" content="多市场个人金融量化学习与投研工作台：A股/美股/港股与全球行情信号看板、Walk-Forward 样本外验证、参数热力图、AI 投研简报与模拟盘日志。" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -19,17 +19,18 @@
           <span id="data-mode-badge" class="badge badge-muted">加载市场数据中...</span>
         </div>
         <p class="text-xs text-muted">
-          通用量化投研底座 + Google Colab Pro+ 算力联动。笔记、进度与模拟盘数据存于本地浏览器，支持一键导出 JSON 备份至 Google Drive (<code>Antigravity/01_Projects/quant_lab/</code>)。
+          通用量化投研底座 + GitHub Actions 盘后自动行情/AI 简报 + Colab Pro+ GPU 联动。笔记与 API Key 仅存本机浏览器，支持 JSON 备份至 Google Drive。
         </p>
       </div>
       <div class="actions-row">
+        <button id="btn-open-ai" type="button" class="btn btn-primary">AI 量化助手</button>
         <label class="btn btn-secondary">
           导入 Colab 回测 JSON
           <input id="import-colab-json" type="file" accept=".json" class="hidden" />
         </label>
-        <button id="btn-export-workspace" type="button" class="btn">导出全站备份</button>
+        <button id="btn-export-workspace" type="button" class="btn">导出备份</button>
         <label class="btn">
-          恢复备份
+          恢复
           <input id="import-workspace-json" type="file" accept=".json" class="hidden" />
         </label>
         <button id="btn-toggle-theme" type="button" class="btn">切换深色</button>
@@ -48,19 +49,18 @@
     <!-- Primary Tabs -->
     <nav class="tabs-nav" role="tablist" aria-label="工作台模块">
       <button class="tab-btn" role="tab" aria-selected="true" data-tab="overview">1. 多市场总览</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="sandbox">2. 通用回测与避坑沙盒</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="learn">3. 成长路线与知识笔记</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="journal">4. 多市场模拟盘日志</button>
-      <button class="tab-btn" role="tab" aria-selected="false" data-tab="resources">5. 标的档案与开源生态</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="daily">2. 每日行情与 AI 简报</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="sandbox">3. 回测与 Walk-Forward 实验室</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="learn">4. 成长路线与知识笔记</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="journal">5. 多市场模拟盘日志</button>
+      <button class="tab-btn" role="tab" aria-selected="false" data-tab="resources">6. 标的档案与开源生态</button>
     </nav>
 
     <main>
       <!-- ==================== TAB 1: MULTI-MARKET OVERVIEW ==================== -->
       <section id="tab-overview" class="tab-panel stack-md">
-        <!-- Market Cards -->
         <div id="overview-market-cards" class="grid-3"></div>
 
-        <!-- Latest Synced Colab Real Backtest Snapshot + System Status -->
         <div class="grid-split-2-1">
           <div class="card stack-sm">
             <div class="flex-between">
@@ -68,7 +68,10 @@
                 <h2 id="overview-colab-title">当前市场 Colab 真实回测快照</h2>
                 <p id="overview-colab-meta" class="text-xs text-muted" style="margin-top:2px;"></p>
               </div>
-              <button id="btn-goto-sandbox" type="button" class="btn btn-primary">进入实时沙盒深度调节</button>
+              <div class="actions-row">
+                <button id="btn-goto-daily" type="button" class="btn btn-secondary">查看今日行情与简报</button>
+                <button id="btn-goto-sandbox" type="button" class="btn btn-primary">进入回测与验证实验室</button>
+              </div>
             </div>
             <div id="overview-colab-body"></div>
           </div>
@@ -102,7 +105,6 @@
           </div>
         </div>
 
-        <!-- Cross-Market Rules Comparison Matrix -->
         <div class="card stack-sm">
           <div class="flex-between">
             <h3>跨市场量化规则对照表（入门必备）</h3>
@@ -127,13 +129,96 @@
         </div>
       </section>
 
-      <!-- ==================== TAB 2: UNIVERSAL BACKTEST SANDBOX ==================== -->
+      <!-- ==================== TAB 2: DAILY MARKET & AI BRIEF ==================== -->
+      <section id="tab-daily" class="tab-panel stack-md hidden">
+        <!-- AI Post-Market Quant Brief -->
+        <div class="card stack-sm">
+          <div class="flex-between">
+            <div>
+              <h2>盘后 AI 投研与风控简报</h2>
+              <p id="daily-brief-meta" class="text-xs text-muted" style="margin-top:2px;">每日 A股/美股收盘后由 GitHub Actions 自动刷新</p>
+            </div>
+            <div class="actions-row">
+              <span id="daily-sentiment-pill" class="sentiment-pill">情绪评分：0</span>
+              <button id="btn-ask-ai-daily" type="button" class="btn btn-secondary">让 AI 深度解读今日行情</button>
+            </div>
+          </div>
+          <p id="daily-brief-summary" class="text-xs" style="line-height:1.7;"></p>
+          <div class="grid-2">
+            <div class="subcard stack-sm">
+              <h4 style="color:var(--warning);">风险提示</h4>
+              <ul id="daily-brief-risks" class="diagnosis-list"></ul>
+            </div>
+            <div class="subcard stack-sm">
+              <h4 style="color:var(--success);">学习者纪律与观察建议</h4>
+              <ul id="daily-brief-actions" class="diagnosis-list"></ul>
+            </div>
+          </div>
+          <details class="subcard">
+            <summary class="text-xs font-semibold" style="cursor:pointer;">查看近 30 天历史 AI 盘后简报沉淀</summary>
+            <div id="daily-brief-history" class="stack-sm scroll-box" style="margin-top:8px;"></div>
+          </details>
+        </div>
+
+        <!-- Daily ETF Quotes Table + Momentum Order Plan -->
+        <div class="grid-split-2-1">
+          <div class="card stack-sm">
+            <div class="flex-between">
+              <div>
+                <h2 id="daily-quotes-title">盘后核心 ETF 行情与动量监控</h2>
+                <p id="daily-quotes-meta" class="text-xs text-muted" style="margin-top:2px;"></p>
+              </div>
+              <span class="badge badge-muted">收盘后自动更新 · 非盘中盯盘</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>代码 / 名称</th>
+                    <th>定位</th>
+                    <th class="text-right">最新收盘</th>
+                    <th class="text-right">1日涨跌</th>
+                    <th class="text-right">5日涨跌</th>
+                    <th class="text-right">20日动量</th>
+                    <th class="text-right">20日波动率</th>
+                    <th class="text-right">信号标签</th>
+                  </tr>
+                </thead>
+                <tbody id="daily-quotes-tbody" class="tabular-nums"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card stack-sm">
+            <h3>当日量化参考信号（模拟观察）</h3>
+            <p id="daily-signal-rule" class="text-xs text-muted"></p>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>标的</th>
+                    <th class="text-right">目标权重</th>
+                    <th class="text-right">模拟股数</th>
+                    <th class="text-right">约需金额</th>
+                  </tr>
+                </thead>
+                <tbody id="daily-plan-tbody" class="tabular-nums"></tbody>
+              </table>
+            </div>
+            <div class="subcard text-xs text-muted">
+              仅供模拟盘学习对照，不构成实盘投资建议。你可以在顶部配置 GitHub Secret <code>LLM_API_KEY</code> 让每日盘后自动由 <code>deepseek-flash</code> 生成简报。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TAB 3: BACKTEST & WALK-FORWARD LAB ==================== -->
       <section id="tab-sandbox" class="tab-panel stack-md hidden">
         <!-- Synced Colab Report Panel -->
         <div id="colab-import-panel" class="card stack-sm hidden">
           <div class="flex-between">
             <div>
-              <h2 id="colab-report-heading">Colab 真实回测报告 (<span id="colab-date-range" class="font-mono text-xs text-muted"></span>)</h2>
+              <h2>Colab 真实回测报告 (<span id="colab-date-range" class="font-mono text-xs text-muted"></span>)</h2>
               <p id="colab-meta-line" class="text-xs text-muted" style="margin-top:4px;"></p>
             </div>
             <button id="btn-clear-colab" type="button" class="btn">隐藏真实报告</button>
@@ -222,7 +307,6 @@
           </div>
         </div>
 
-        <!-- Lookahead Warning -->
         <div id="lookahead-warning" class="callout-warning hidden">
           <strong style="color:var(--warning);">⚠ 未来函数模式已开启：</strong>
           <span>当前回测错误地使用了「T 日收盘价决策 + T 日收盘价瞬间成交」，实盘中收盘瞬间无法保证成交。关闭该开关即可恢复严谨的 T+1 开盘成交逻辑。</span>
@@ -268,9 +352,107 @@
             <ul id="sandbox-diagnosis" class="diagnosis-list"></ul>
           </div>
         </div>
+
+        <!-- Walk-Forward & Parameter Heatmap & Stress Test Lab -->
+        <div class="card stack-md">
+          <div class="flex-between">
+            <div>
+              <h2>第 2 课实战模块：Walk-Forward 样本外滚动验证 & 参数高原热力图</h2>
+              <p class="text-xs text-muted" style="margin-top:2px;">在浏览器实时对当前市场执行 42 组参数扫描、3年训练→1年样本外滚动验证，以及调仓日偏移/滑点压力测试</p>
+            </div>
+            <div class="actions-row">
+              <select id="wf-heatmap-metric" class="select" style="width:130px;">
+                <option value="sharpe" selected>热力图：夏普</option>
+                <option value="cagr">热力图：年化%</option>
+              </select>
+              <button id="btn-run-wf" type="button" class="btn btn-primary">运行样本外与防过拟合体检</button>
+            </div>
+          </div>
+
+          <div id="wf-placeholder" class="subcard text-xs text-muted">
+            点击右上角 <strong>「运行样本外与防过拟合体检」</strong>，约 0.3 秒即可在当前市场行情上算出参数高原热力图、逐年 Walk-Forward 样本外表现（含 WFE 效率）以及调仓日偏移与滑点翻倍压力测试。
+          </div>
+
+          <div id="wf-results-container" class="stack-md hidden">
+            <!-- Summary KPIs -->
+            <div id="wf-kpi-strip" class="grid-kpi"></div>
+
+            <!-- Heatmap + Year-by-year Walk-Forward Table -->
+            <div class="grid-2">
+              <div class="subcard stack-sm">
+                <div class="flex-between">
+                  <h4>参数高原热力图（lookback × rebalance）</h4>
+                  <span id="wf-grid-gap" class="text-xs font-mono text-muted"></span>
+                </div>
+                <div class="table-wrap">
+                  <table id="wf-heatmap-table"></table>
+                </div>
+                <p class="text-xs text-muted">绿色越集中形成“高原”越稳健；单个孤立高亮点往往是过拟合陷阱。</p>
+              </div>
+
+              <div class="subcard stack-sm">
+                <div class="flex-between">
+                  <h4>逐年 Walk-Forward 样本内 vs 样本外</h4>
+                  <span id="wf-wfe-badge" class="badge"></span>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>样本外年份</th>
+                        <th>选定参数</th>
+                        <th class="text-right">样本内年化</th>
+                        <th class="text-right">样本外年化</th>
+                        <th class="text-right">样本外回撤</th>
+                      </tr>
+                    </thead>
+                    <tbody id="wf-folds-tbody" class="tabular-nums"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stress Tests -->
+            <div class="grid-2">
+              <div class="subcard stack-sm">
+                <h4>压力测试 A：调仓日偏移敏感度（固定 20/20）</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>起始偏移</th>
+                        <th class="text-right">年化收益</th>
+                        <th class="text-right">最大回撤</th>
+                        <th class="text-right">夏普</th>
+                      </tr>
+                    </thead>
+                    <tbody id="wf-offset-tbody" class="tabular-nums"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="subcard stack-sm">
+                <h4>压力测试 B：滑点翻倍冲击测试（固定 20/20）</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>单边滑点</th>
+                        <th class="text-right">年化收益</th>
+                        <th class="text-right">最大回撤</th>
+                        <th class="text-right">总费用占本金</th>
+                      </tr>
+                    </thead>
+                    <tbody id="wf-slip-tbody" class="tabular-nums"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <!-- ==================== TAB 3: LEARNING ROADMAP & NOTES ==================== -->
+      <!-- ==================== TAB 4: LEARNING ROADMAP & NOTES ==================== -->
       <section id="tab-learn" class="tab-panel stack-md hidden">
         <div class="card stack-sm">
           <div class="flex-between">
@@ -298,19 +480,19 @@
             <div class="subcard stack-sm">
               <h4>未来函数（Look-ahead Bias）</h4>
               <p class="text-xs text-muted">
-                回测偷看未来信息的 Bug（T 日收盘决策又按 T 日收盘成交、财报未按公告日对齐、全局归一化泄露）。铁律：<strong>决策只用已公开历史，成交必须晚于信号</strong>。
+                回测偷看未来信息的 Bug。铁律：<strong>决策只用已公开历史，成交必须晚于信号（T日信号 → T+1日开盘成交）</strong>。
               </p>
             </div>
             <div class="subcard stack-sm">
-              <h4>A 股 vs 美股核心差异</h4>
+              <h4>Walk-Forward & 参数高原</h4>
               <p class="text-xs text-muted">
-                <strong>A 股</strong>最小 100 股、股票 T+1、有涨跌停、普通账户常有最低 ¥5 佣金；<strong>美股</strong>最小 1 股、T+0 无涨跌停（注意融资账户 $25k PDT 规则）、多数免佣但需留意汇率和股息预扣税。
+                用过去 3 年挑参数，锁定后跑未知的第 4 年样本外行情，拼接真实曲线；选参数只看连续稳定的“参数高原”，远离孤立极值，并用分批错峰调仓（Tranching）消除择日运气。
               </p>
             </div>
             <div class="subcard stack-sm">
-              <h4>过度拟合（Overfitting）</h4>
+              <h4>大模型辅助量化的正确姿势</h4>
               <p class="text-xs text-muted">
-                反复调参把历史曲线调到完美，实盘立刻失效。防范方法：使用 <strong>Walk-Forward 滚动样本外验证</strong>，先用白盒策略打底再上复杂机器学习模型。
+                让 LLM 做<strong>盘后情绪打分、风控提示、回测挑刺与代码起草</strong>；绝不要直接把 K 线价格丢给大模型预测明天涨跌。
               </p>
             </div>
           </div>
@@ -322,7 +504,7 @@
             </div>
             <form id="note-form" class="stack-sm">
               <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:8px;">
-                <input id="note-title" type="text" class="input" required placeholder="笔记标题，例如：A股全天候回测复盘" />
+                <input id="note-title" type="text" class="input" required placeholder="笔记标题，例如：Walk-Forward 防过拟合总结" />
                 <select id="note-market" class="select">
                   <option value="A股">A股</option>
                   <option value="美股">美股</option>
@@ -346,7 +528,7 @@
         </div>
       </section>
 
-      <!-- ==================== TAB 4: MULTI-MARKET PAPER JOURNAL ==================== -->
+      <!-- ==================== TAB 5: MULTI-MARKET PAPER JOURNAL ==================== -->
       <section id="tab-journal" class="tab-panel stack-md hidden">
         <div class="grid-kpi">
           <div class="card stack-sm">
@@ -373,7 +555,7 @@
         <div class="card stack-sm">
           <div class="flex-between">
             <div>
-              <h2 id="journal-form-title">录入模拟盘交易记录（按当前所选市场独立记账）</h2>
+              <h2 id="journal-form-title">录入模拟盘交易记录</h2>
               <p id="journal-broker-hint" class="text-xs text-muted" style="margin-top:2px;"></p>
             </div>
             <div class="actions-row">
@@ -435,7 +617,7 @@
         </div>
       </section>
 
-      <!-- ==================== TAB 5: UNIVERSE & ECOSYSTEM ==================== -->
+      <!-- ==================== TAB 6: UNIVERSE & ECOSYSTEM ==================== -->
       <section id="tab-resources" class="tab-panel stack-md hidden">
         <div class="card stack-sm">
           <div class="flex-between">
@@ -495,6 +677,50 @@
       <span>免责声明：仅用于量化编程学习与历史统计演示，不构成任何投资建议。</span>
     </footer>
   </div>
+
+  <!-- ==================== AI QUANT ASSISTANT SLIDE-OVER DRAWER ==================== -->
+  <div id="ai-backdrop" class="ai-backdrop hidden"></div>
+  <aside id="ai-drawer" class="ai-drawer hidden" aria-label="AI 量化投研助手">
+    <div class="flex-between">
+      <div>
+        <h3>AI 量化投研助手 (BYOK 安全本地模式)</h3>
+        <span id="ai-cfg-status" class="text-xs font-mono"></span>
+      </div>
+      <div class="actions-row">
+        <button id="btn-clear-ai-chat" type="button" class="btn">清空</button>
+        <button id="btn-close-ai" type="button" class="btn">关闭</button>
+      </div>
+    </div>
+
+    <details class="subcard" open>
+      <summary class="text-xs font-semibold" style="cursor:pointer;">模型与 API 配置（仅存你本机浏览器，不上传 GitHub）</summary>
+      <div class="stack-sm" style="margin-top:8px;">
+        <input id="ai-base-url" type="text" class="input font-mono" placeholder="OpenAI 兼容 Base URL (如 https://api.deepseek.com/v1)" />
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <input id="ai-model" type="text" class="input font-mono" placeholder="模型名如 deepseek-flash" />
+          <input id="ai-api-key" type="password" class="input font-mono" placeholder="粘贴本地 .env 中的 API Key" />
+        </div>
+        <div class="flex-between">
+          <span class="text-xs text-muted">支持 DeepSeek / 任意 OpenAI 兼容中转</span>
+          <button id="btn-save-ai-cfg" type="button" class="btn btn-secondary">保存本地配置</button>
+        </div>
+      </div>
+    </details>
+
+    <div class="actions-row">
+      <button type="button" class="btn" data-ai-preset="backtest">诊断回测与过拟合</button>
+      <button type="button" class="btn" data-ai-preset="daily">点评今日盘后行情</button>
+      <button type="button" class="btn" data-ai-preset="journal">复盘我的模拟盘</button>
+      <button type="button" class="btn" data-ai-preset="strategy">设计风控改良</button>
+    </div>
+
+    <div id="ai-chat-messages" class="ai-chat-box"></div>
+
+    <form id="ai-chat-form" style="display:flex; gap:8px;">
+      <input id="ai-prompt-input" type="text" class="input" placeholder="输入你的量化问题，例如：为什么2022年样本外失效？" required />
+      <button id="ai-send-btn" type="submit" class="btn btn-primary">发送</button>
+    </form>
+  </aside>
 
   <script type="module" src="./src/app.js"></script>
 </body>

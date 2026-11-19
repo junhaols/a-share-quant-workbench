@@ -1,0 +1,18 @@
+[
+  {
+    "date": "2026-11-18",
+    "source": "rule_based_quant_engine",
+    "model": "rule-fallback (未配置 GitHub Secret LLM_API_KEY)",
+    "generated_at_utc": "2026-11-19T17:00:26.875508+00:00",
+    "sentiment_score": -1,
+    "regime": "结构分化 / 规则监控",
+    "summary": "A股市场 (CN)（截至 2026-11-18）：1/6 只进攻标的 20 日动量为正；领涨 红利ETF(+1.51%)，最弱 创业板ETF(-14.19%)。",
+    "risk_alerts": [
+      "A股市场 (CN)波动偏高标的：纳指ETF(26.2%)、中证500ETF(34.3%)，注意仓位控制与滑点。"
+    ],
+    "action_notes": [
+      "学习阶段仅作模拟盘观察记录，严禁因单日涨跌情绪化追单。",
+      "在 GitHub 仓库 Settings -> Secrets 配置 LLM_API_KEY（及可选 LLM_BASE_URL、LLM_MODEL=deepseek-flash）后，每日盘后将自动切换为大模型投研简报。"
+    ]
+  }
+]

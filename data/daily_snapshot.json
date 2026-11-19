@@ -1,0 +1,162 @@
+{
+  "updated_at_utc": "2026-11-19T17:00:26.875547+00:00",
+  "markets": {
+    "cn": {
+      "market_id": "cn",
+      "market_name": "A股市场 (CN)",
+      "currency": "¥",
+      "as_of_date": "2026-11-18",
+      "trading_days_total": 2151,
+      "default_cash": 80000,
+      "lot_size": 100,
+      "etfs": [
+        {
+          "code": "510880",
+          "name": "红利ETF",
+          "role": "高股息防御",
+          "close": 3.436,
+          "ret_1d_pct": 0.59,
+          "ret_5d_pct": 1.87,
+          "ret_20d_pct": 1.51,
+          "ret_60d_pct": 2.87,
+          "vol_20d_pct": 15.85,
+          "above_ma20": true,
+          "is_safe": false,
+          "signal_tag": "动量Top2入选"
+        },
+        {
+          "code": "510300",
+          "name": "沪深300ETF",
+          "role": "A股大盘",
+          "close": 4.058,
+          "ret_1d_pct": 0.4,
+          "ret_5d_pct": -2.22,
+          "ret_20d_pct": -3.03,
+          "ret_60d_pct": -15.23,
+          "vol_20d_pct": 15.97,
+          "above_ma20": false,
+          "is_safe": false,
+          "signal_tag": "中性震荡"
+        },
+        {
+          "code": "513100",
+          "name": "纳指ETF",
+          "role": "美股跨境",
+          "close": 2.167,
+          "ret_1d_pct": 0.05,
+          "ret_5d_pct": -2.96,
+          "ret_20d_pct": -6.23,
+          "ret_60d_pct": -3.22,
+          "vol_20d_pct": 26.21,
+          "above_ma20": false,
+          "is_safe": false,
+          "signal_tag": "弱势观察"
+        },
+        {
+          "code": "510500",
+          "name": "中证500ETF",
+          "role": "A股中盘",
+          "close": 6.309,
+          "ret_1d_pct": -0.13,
+          "ret_5d_pct": -6.51,
+          "ret_20d_pct": -8.09,
+          "ret_60d_pct": -22.92,
+          "vol_20d_pct": 34.31,
+          "above_ma20": false,
+          "is_safe": false,
+          "signal_tag": "弱势观察"
+        },
+        {
+          "code": "518880",
+          "name": "黄金ETF",
+          "role": "避险抗通胀",
+          "close": 7.707,
+          "ret_1d_pct": -2.41,
+          "ret_5d_pct": -7.02,
+          "ret_20d_pct": -8.38,
+          "ret_60d_pct": -15.1,
+          "vol_20d_pct": 24.21,
+          "above_ma20": false,
+          "is_safe": false,
+          "signal_tag": "弱势观察"
+        },
+        {
+          "code": "159915",
+          "name": "创业板ETF",
+          "role": "成长弹性",
+          "close": 2.328,
+          "ret_1d_pct": 0.78,
+          "ret_5d_pct": -10.12,
+          "ret_20d_pct": -14.19,
+          "ret_60d_pct": -37.47,
+          "vol_20d_pct": 51.37,
+          "above_ma20": false,
+          "is_safe": false,
+          "signal_tag": "弱势观察"
+        },
+        {
+          "code": "511010",
+          "name": "国债ETF",
+          "role": "低波压舱石",
+          "close": 141.344,
+          "ret_1d_pct": -0.02,
+          "ret_5d_pct": 0.0,
+          "ret_20d_pct": 0.14,
+          "ret_60d_pct": 0.48,
+          "vol_20d_pct": 0.88,
+          "above_ma20": true,
+          "is_safe": true,
+          "signal_tag": "避险入选"
+        }
+      ],
+      "momentum_signal": {
+        "rule": "20日动量 Top2 + 负动量切入避险资产",
+        "top2_candidates": [
+          {
+            "code": "510880",
+            "name": "红利ETF",
+            "ret_20d_pct": 1.51
+          },
+          {
+            "code": "510300",
+            "name": "沪深300ETF",
+            "ret_20d_pct": -3.03
+          }
+        ],
+        "target_plan": [
+          {
+            "code": "510880",
+            "name": "红利ETF",
+            "weight_pct": 50.0,
+            "ref_price": 3.436,
+            "qty": 11600,
+            "est_amount": 39857.6
+          },
+          {
+            "code": "511010",
+            "name": "国债ETF",
+            "weight_pct": 50.0,
+            "ref_price": 141.344,
+            "qty": 200,
+            "est_amount": 28268.8
+          }
+        ]
+      }
+    }
+  },
+  "ai_brief": {
+    "source": "rule_based_quant_engine",
+    "model": "rule-fallback (未配置 GitHub Secret LLM_API_KEY)",
+    "generated_at_utc": "2026-11-19T17:00:26.875508+00:00",
+    "sentiment_score": -1,
+    "regime": "结构分化 / 规则监控",
+    "summary": "A股市场 (CN)（截至 2026-11-18）：1/6 只进攻标的 20 日动量为正；领涨 红利ETF(+1.51%)，最弱 创业板ETF(-14.19%)。",
+    "risk_alerts": [
+      "A股市场 (CN)波动偏高标的：纳指ETF(26.2%)、中证500ETF(34.3%)，注意仓位控制与滑点。"
+    ],
+    "action_notes": [
+      "学习阶段仅作模拟盘观察记录，严禁因单日涨跌情绪化追单。",
+      "在 GitHub 仓库 Settings -> Secrets 配置 LLM_API_KEY（及可选 LLM_BASE_URL、LLM_MODEL=deepseek-flash）后，每日盘后将自动切换为大模型投研简报。"
+    ]
+  }
+}
