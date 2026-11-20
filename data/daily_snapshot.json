@@ -1,12 +1,12 @@
 {
-  "updated_at_utc": "2026-11-20T02:31:09.401802+00:00",
+  "updated_at_utc": "2026-11-20T16:23:29.909169+00:00",
   "markets": {
     "cn": {
       "market_id": "cn",
       "market_name": "A股市场 (CN)",
       "currency": "¥",
-      "as_of_date": "2026-11-18",
-      "trading_days_total": 2151,
+      "as_of_date": "2026-11-19",
+      "trading_days_total": 2152,
       "default_cash": 80000,
       "lot_size": 100,
       "etfs": [
@@ -14,12 +14,12 @@
           "code": "510880",
           "name": "红利ETF",
           "role": "高股息防御",
-          "close": 3.436,
-          "ret_1d_pct": 0.59,
-          "ret_5d_pct": 1.87,
-          "ret_20d_pct": 1.51,
-          "ret_60d_pct": 2.87,
-          "vol_20d_pct": 15.85,
+          "close": 3.416,
+          "ret_1d_pct": -0.58,
+          "ret_5d_pct": 1.76,
+          "ret_20d_pct": 2.68,
+          "ret_60d_pct": 1.67,
+          "vol_20d_pct": 14.68,
           "above_ma20": true,
           "is_safe": false,
           "lot": 100,
@@ -29,12 +29,12 @@
           "code": "510300",
           "name": "沪深300ETF",
           "role": "A股大盘",
-          "close": 4.058,
-          "ret_1d_pct": 0.4,
-          "ret_5d_pct": -2.22,
-          "ret_20d_pct": -3.03,
-          "ret_60d_pct": -15.23,
-          "vol_20d_pct": 15.97,
+          "close": 4.06,
+          "ret_1d_pct": 0.05,
+          "ret_5d_pct": -1.31,
+          "ret_20d_pct": -1.14,
+          "ret_60d_pct": -12.76,
+          "vol_20d_pct": 14.71,
           "above_ma20": false,
           "is_safe": false,
           "lot": 100,
@@ -44,27 +44,27 @@
           "code": "513100",
           "name": "纳指ETF",
           "role": "美股跨境",
-          "close": 2.167,
-          "ret_1d_pct": 0.05,
-          "ret_5d_pct": -2.96,
-          "ret_20d_pct": -6.23,
-          "ret_60d_pct": -3.22,
-          "vol_20d_pct": 26.21,
+          "close": 2.175,
+          "ret_1d_pct": 0.37,
+          "ret_5d_pct": -1.94,
+          "ret_20d_pct": -3.85,
+          "ret_60d_pct": -1.14,
+          "vol_20d_pct": 25.45,
           "above_ma20": false,
           "is_safe": false,
           "lot": 100,
-          "signal_tag": "弱势观察"
+          "signal_tag": "中性震荡"
         },
         {
           "code": "510500",
           "name": "中证500ETF",
           "role": "A股中盘",
-          "close": 6.309,
-          "ret_1d_pct": -0.13,
-          "ret_5d_pct": -6.51,
-          "ret_20d_pct": -8.09,
-          "ret_60d_pct": -22.92,
-          "vol_20d_pct": 34.31,
+          "close": 6.286,
+          "ret_1d_pct": -0.36,
+          "ret_5d_pct": -5.16,
+          "ret_20d_pct": -5.95,
+          "ret_60d_pct": -19.45,
+          "vol_20d_pct": 33.34,
           "above_ma20": false,
           "is_safe": false,
           "lot": 100,
@@ -74,12 +74,12 @@
           "code": "518880",
           "name": "黄金ETF",
           "role": "避险抗通胀",
-          "close": 7.707,
-          "ret_1d_pct": -2.41,
-          "ret_5d_pct": -7.02,
-          "ret_20d_pct": -8.38,
-          "ret_60d_pct": -15.1,
-          "vol_20d_pct": 24.21,
+          "close": 7.612,
+          "ret_1d_pct": -1.23,
+          "ret_5d_pct": -5.85,
+          "ret_20d_pct": -8.95,
+          "ret_60d_pct": -15.18,
+          "vol_20d_pct": 24.37,
           "above_ma20": false,
           "is_safe": false,
           "lot": 100,
@@ -89,12 +89,12 @@
           "code": "159915",
           "name": "创业板ETF",
           "role": "成长弹性",
-          "close": 2.328,
-          "ret_1d_pct": 0.78,
-          "ret_5d_pct": -10.12,
-          "ret_20d_pct": -14.19,
-          "ret_60d_pct": -37.47,
-          "vol_20d_pct": 51.37,
+          "close": 2.308,
+          "ret_1d_pct": -0.86,
+          "ret_5d_pct": -8.56,
+          "ret_20d_pct": -10.96,
+          "ret_60d_pct": -34.02,
+          "vol_20d_pct": 49.54,
           "above_ma20": false,
           "is_safe": false,
           "lot": 100,
@@ -104,12 +104,12 @@
           "code": "511010",
           "name": "国债ETF",
           "role": "低波压舱石",
-          "close": 141.344,
-          "ret_1d_pct": -0.02,
-          "ret_5d_pct": 0.0,
-          "ret_20d_pct": 0.14,
-          "ret_60d_pct": 0.48,
-          "vol_20d_pct": 0.88,
+          "close": 141.411,
+          "ret_1d_pct": 0.05,
+          "ret_5d_pct": 0.03,
+          "ret_20d_pct": 0.18,
+          "ret_60d_pct": 0.54,
+          "vol_20d_pct": 0.89,
           "above_ma20": true,
           "is_safe": true,
           "lot": 100,
@@ -122,12 +122,12 @@
           {
             "code": "510880",
             "name": "红利ETF",
-            "ret_20d_pct": 1.51
+            "ret_20d_pct": 2.68
           },
           {
             "code": "510300",
             "name": "沪深300ETF",
-            "ret_20d_pct": -3.03
+            "ret_20d_pct": -1.14
           }
         ],
         "target_plan": [
@@ -135,17 +135,17 @@
             "code": "510880",
             "name": "红利ETF",
             "weight_pct": 50.0,
-            "ref_price": 3.436,
-            "qty": 11600,
-            "est_amount": 39857.6
+            "ref_price": 3.416,
+            "qty": 11700,
+            "est_amount": 39967.2
           },
           {
             "code": "511010",
             "name": "国债ETF",
             "weight_pct": 50.0,
-            "ref_price": 141.344,
+            "ref_price": 141.411,
             "qty": 200,
-            "est_amount": 28268.8
+            "est_amount": 28282.2
           }
         ]
       }
@@ -154,8 +154,8 @@
       "market_id": "global",
       "market_name": "港股市场 (HK)",
       "currency": "HK$",
-      "as_of_date": "2026-11-19",
-      "trading_days_total": 1534,
+      "as_of_date": "2026-11-20",
+      "trading_days_total": 1535,
       "default_cash": 100000,
       "lot_size": 100,
       "etfs": [
@@ -163,13 +163,13 @@
           "code": "3110.HK",
           "name": "GX恒生高股息",
           "role": "高股息防御",
-          "close": 29.42,
-          "ret_1d_pct": -0.81,
-          "ret_5d_pct": -0.54,
-          "ret_20d_pct": 3.23,
-          "ret_60d_pct": -1.93,
-          "vol_20d_pct": 11.42,
-          "above_ma20": true,
+          "close": 29.08,
+          "ret_1d_pct": -1.16,
+          "ret_5d_pct": -1.22,
+          "ret_20d_pct": 1.39,
+          "ret_60d_pct": -2.7,
+          "vol_20d_pct": 12.15,
+          "above_ma20": false,
           "is_safe": false,
           "lot": 50,
           "signal_tag": "动量Top2入选"
@@ -178,12 +178,12 @@
           "code": "2800.HK",
           "name": "盈富基金",
           "role": "恒指大盘",
-          "close": 22.94,
-          "ret_1d_pct": -2.05,
-          "ret_5d_pct": -4.81,
-          "ret_20d_pct": -0.31,
-          "ret_60d_pct": -9.66,
-          "vol_20d_pct": 21.18,
+          "close": 22.54,
+          "ret_1d_pct": -1.74,
+          "ret_5d_pct": -4.97,
+          "ret_20d_pct": -2.79,
+          "ret_60d_pct": -11.64,
+          "vol_20d_pct": 21.79,
           "above_ma20": false,
           "is_safe": false,
           "lot": 500,
@@ -193,27 +193,27 @@
           "code": "3033.HK",
           "name": "南方恒生科技",
           "role": "港股科技",
-          "close": 3.566,
-          "ret_1d_pct": -2.57,
-          "ret_5d_pct": -7.28,
-          "ret_20d_pct": -3.88,
-          "ret_60d_pct": -20.72,
-          "vol_20d_pct": 33.4,
+          "close": 3.438,
+          "ret_1d_pct": -3.59,
+          "ret_5d_pct": -7.83,
+          "ret_20d_pct": -9.48,
+          "ret_60d_pct": -24.14,
+          "vol_20d_pct": 34.03,
           "above_ma20": false,
           "is_safe": false,
           "lot": 200,
-          "signal_tag": "中性震荡"
+          "signal_tag": "弱势观察"
         },
         {
           "code": "3081.HK",
           "name": "价值黄金",
           "role": "港币黄金",
-          "close": 17.77,
-          "ret_1d_pct": -0.11,
-          "ret_5d_pct": -4.92,
-          "ret_20d_pct": -7.69,
-          "ret_60d_pct": -18.56,
-          "vol_20d_pct": 23.46,
+          "close": 16.83,
+          "ret_1d_pct": -5.29,
+          "ret_5d_pct": -8.48,
+          "ret_20d_pct": -11.0,
+          "ret_60d_pct": -22.8,
+          "vol_20d_pct": 28.66,
           "above_ma20": false,
           "is_safe": false,
           "lot": 100,
@@ -223,12 +223,12 @@
           "code": "3053.HK",
           "name": "南方港元货币",
           "role": "港元现金避险",
-          "close": 1195.95,
-          "ret_1d_pct": 0.04,
-          "ret_5d_pct": 0.06,
-          "ret_20d_pct": 0.24,
-          "ret_60d_pct": 0.64,
-          "vol_20d_pct": 0.69,
+          "close": 1196.2,
+          "ret_1d_pct": 0.02,
+          "ret_5d_pct": 0.05,
+          "ret_20d_pct": 0.21,
+          "ret_60d_pct": 0.69,
+          "vol_20d_pct": 0.67,
           "above_ma20": true,
           "is_safe": true,
           "lot": 1,
@@ -241,12 +241,12 @@
           {
             "code": "3110.HK",
             "name": "GX恒生高股息",
-            "ret_20d_pct": 3.23
+            "ret_20d_pct": 1.39
           },
           {
             "code": "2800.HK",
             "name": "盈富基金",
-            "ret_20d_pct": -0.31
+            "ret_20d_pct": -2.79
           }
         ],
         "target_plan": [
@@ -254,17 +254,17 @@
             "code": "3110.HK",
             "name": "GX恒生高股息",
             "weight_pct": 50.0,
-            "ref_price": 29.42,
-            "qty": 1650,
-            "est_amount": 48543.0
+            "ref_price": 29.08,
+            "qty": 1700,
+            "est_amount": 49436.0
           },
           {
             "code": "3053.HK",
             "name": "南方港元货币",
             "weight_pct": 50.0,
-            "ref_price": 1195.95,
+            "ref_price": 1196.2,
             "qty": 41,
-            "est_amount": 49034.0
+            "est_amount": 49044.2
           }
         ]
       }
@@ -414,11 +414,11 @@
   "ai_brief": {
     "source": "llm",
     "model": "deepseek-flash",
-    "generated_at_utc": "2026-11-20T02:31:09.401752+00:00",
+    "generated_at_utc": "2026-11-20T16:23:29.909113+00:00",
     "sentiment_score": -2,
     "regime": "防御避险",
-    "headline": "全球风险资产普跌，仅红利与短债抗跌",
-    "summary": "A股、港股、美股成长板块与黄金同步走弱，波动率明显抬升；只有红利、国债、货币类资产仍站上MA20。三地目标组合已全面转向防御，债券与高股息占比合计过半。",
+    "headline": "全球风险偏好收缩，红利与短债成避风港",
+    "summary": "美股、港股与A股成长同步走弱，黄金回调；仅红利、国债、短久期美债及货币ETF相对抗跌，配置转向防御。",
     "key_metrics": [
       {
         "label": "正动量广度",
@@ -426,11 +426,11 @@
       },
       {
         "label": "20日领涨",
-        "value": "红利ETF +1.51%"
+        "value": "红利ETF +2.68%"
       },
       {
         "label": "20日最弱",
-        "value": "创业板ETF -14.19%"
+        "value": "创业板ETF -10.96%"
       },
       {
         "label": "当前参考信号",
@@ -440,41 +440,41 @@
     "market_sections": [
       {
         "market": "A股市场 (CN)",
-        "status": "防御抗跌",
+        "status": "防御占优",
         "points": [
-          "红利ETF逆势+0.59%、5日+1.87%，是唯一入选动量Top2的品种",
-          "创业板ETF 20日-14.19%、中证500 5日-6.51%，成长与小盘全线走弱",
-          "国债ETF波动率仅0.88%并站上MA20，目标配置50%红利+50%国债"
+          "红利ETF近5日+1.76%、20日+2.68%，为动量Top2，防御属性凸显",
+          "创业板ETF近5日-8.56%、20日-10.96%，波动49.54%，成长承压",
+          "国债ETF近5日+0.03%、波动0.89%，避险入选"
         ]
       },
       {
         "market": "港股市场 (HK)",
-        "status": "股息独立",
+        "status": "弱势避险",
         "points": [
-          "GX恒生高股息20日+3.23%，是港股唯一正收益且站上MA20的品种",
-          "盈富基金-2.05%、恒生科技-2.57%，5日跌幅达4.8%~7.3%",
-          "价值黄金5日-4.92%，港元货币ETF波动0.69%承接避险"
+          "恒生科技近5日-7.83%、20日-9.48%，科技板块明显走弱",
+          "GX恒生高股息近5日-1.22%、20日+1.39%，相对抗跌但仍在MA20下方",
+          "南方港元货币近5日+0.05%、波动0.67%，避险入选"
         ]
       },
       {
         "market": "美股市场 (US)",
         "status": "普跌避险",
         "points": [
-          "SPY -1.96%、5日-5.45%；QQQ -2.19%、20日-8.44%，跌幅居前",
-          "罗素2000 -2.18%，小盘与成长同步承压，风险偏好收缩",
-          "仅SHY（1-3年美债）站上MA20，目标计划100%配置短债"
+          "标普500近5日-5.45%、纳指100近5日-6.27%，主要股指普跌",
+          "罗素2000近5日-5.11%，小盘股同步承压",
+          "1-3年美债近5日+0.30%、波动1.90%，短久期避险占优"
         ]
       }
     ],
     "risk_alerts": [
-      "【高波动】创业板20日波动率51.37%、纳指100为34.34%，反弹与回撤幅度都会被放大",
-      "【避险失效】黄金ETF 518880 20日-8.38%、GLD -9.17%，传统避险品种同步下跌，需警惕流动性挤压",
-      "【时点差异】A股快照为11-18、港美股为11-19，跨市场强弱对比存在一日时滞"
+      "【波动扩散】美股与港股科技同步走弱，QQQ近5日-6.27%、恒生科技-7.83%",
+      "【黄金破位】黄金ETF与GLD近20日分别-8.95%、-9.17%，传统避险资产回调",
+      "【趋势风险】多数ETF位于MA20下方，反弹持续性仍需观察"
     ],
     "action_notes": [
-      "严格按目标计划执行：红利+国债、高股息+货币各半，短债满仓，不因单日反弹临时加仓成长",
-      "以MA20作为多空分界线，未收复前维持防御仓位，不博底部反弹",
-      "把现金与短债视为波动缓冲垫，先管理回撤再谈收益，避免追涨杀跌"
+      "以20日动量与MA20为过滤，弱势标的不盲目抄底",
+      "保留国债、货币等低波动资产对冲，控制总仓位与回撤",
+      "按周度纪律再平衡，单日涨跌不构成决策依据；目标计划仅为示例，不承诺收益"
     ]
   }
 }
