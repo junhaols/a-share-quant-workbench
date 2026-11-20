@@ -1,5 +1,5 @@
 {
-  "updated_at_utc": "2026-11-19T17:24:10.219996+00:00",
+  "updated_at_utc": "2026-11-20T02:31:09.401802+00:00",
   "markets": {
     "cn": {
       "market_id": "cn",
@@ -22,6 +22,7 @@
           "vol_20d_pct": 15.85,
           "above_ma20": true,
           "is_safe": false,
+          "lot": 100,
           "signal_tag": "动量Top2入选"
         },
         {
@@ -36,6 +37,7 @@
           "vol_20d_pct": 15.97,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 100,
           "signal_tag": "中性震荡"
         },
         {
@@ -50,6 +52,7 @@
           "vol_20d_pct": 26.21,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 100,
           "signal_tag": "弱势观察"
         },
         {
@@ -64,6 +67,7 @@
           "vol_20d_pct": 34.31,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 100,
           "signal_tag": "弱势观察"
         },
         {
@@ -78,6 +82,7 @@
           "vol_20d_pct": 24.21,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 100,
           "signal_tag": "弱势观察"
         },
         {
@@ -92,6 +97,7 @@
           "vol_20d_pct": 51.37,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 100,
           "signal_tag": "弱势观察"
         },
         {
@@ -106,6 +112,7 @@
           "vol_20d_pct": 0.88,
           "above_ma20": true,
           "is_safe": true,
+          "lot": 100,
           "signal_tag": "避险入选"
         }
       ],
@@ -275,98 +282,105 @@
           "code": "TLT",
           "name": "20年期美债 ETF",
           "role": "长久期国债",
-          "close": 80.16,
-          "ret_1d_pct": -0.07,
-          "ret_5d_pct": 0.55,
-          "ret_20d_pct": -1.52,
-          "ret_60d_pct": -2.6,
-          "vol_20d_pct": 9.86,
+          "close": 80.35,
+          "ret_1d_pct": 0.16,
+          "ret_5d_pct": 0.79,
+          "ret_20d_pct": -1.29,
+          "ret_60d_pct": -2.37,
+          "vol_20d_pct": 9.89,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 1,
           "signal_tag": "中性震荡"
         },
         {
           "code": "SCHD",
           "name": "美股红利 ETF",
           "role": "高股息防御",
-          "close": 34.224,
-          "ret_1d_pct": -1.37,
-          "ret_5d_pct": -4.75,
-          "ret_20d_pct": -3.32,
-          "ret_60d_pct": -1.58,
-          "vol_20d_pct": 16.85,
+          "close": 34.2,
+          "ret_1d_pct": -1.44,
+          "ret_5d_pct": -4.81,
+          "ret_20d_pct": -3.39,
+          "ret_60d_pct": -1.65,
+          "vol_20d_pct": 16.92,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 1,
           "signal_tag": "中性震荡"
         },
         {
           "code": "IWM",
           "name": "罗素2000 ETF",
           "role": "美股小盘",
-          "close": 266.16,
-          "ret_1d_pct": -1.47,
-          "ret_5d_pct": -4.41,
-          "ret_20d_pct": -3.8,
-          "ret_60d_pct": -10.73,
-          "vol_20d_pct": 25.3,
+          "close": 264.22,
+          "ret_1d_pct": -2.18,
+          "ret_5d_pct": -5.11,
+          "ret_20d_pct": -4.5,
+          "ret_60d_pct": -11.38,
+          "vol_20d_pct": 25.87,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 1,
           "signal_tag": "中性震荡"
         },
         {
           "code": "SPY",
           "name": "标普500 ETF",
           "role": "美股大盘",
-          "close": 723.78,
-          "ret_1d_pct": -0.88,
-          "ret_5d_pct": -4.4,
-          "ret_20d_pct": -5.26,
-          "ret_60d_pct": -5.29,
-          "vol_20d_pct": 22.17,
+          "close": 715.87,
+          "ret_1d_pct": -1.96,
+          "ret_5d_pct": -5.45,
+          "ret_20d_pct": -6.29,
+          "ret_60d_pct": -6.32,
+          "vol_20d_pct": 22.86,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 1,
           "signal_tag": "弱势观察"
         },
         {
           "code": "QQQ",
           "name": "纳斯达克100 ETF",
           "role": "美股科技",
-          "close": 654.7896,
-          "ret_1d_pct": -0.72,
-          "ret_5d_pct": -4.85,
-          "ret_20d_pct": -7.05,
-          "ret_60d_pct": -7.86,
-          "vol_20d_pct": 33.75,
+          "close": 645.04,
+          "ret_1d_pct": -2.19,
+          "ret_5d_pct": -6.27,
+          "ret_20d_pct": -8.44,
+          "ret_60d_pct": -9.23,
+          "vol_20d_pct": 34.34,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 1,
           "signal_tag": "弱势观察"
         },
         {
           "code": "GLD",
           "name": "SPDR 黄金 ETF",
           "role": "大宗避险",
-          "close": 337.92,
-          "ret_1d_pct": -0.96,
-          "ret_5d_pct": -4.78,
-          "ret_20d_pct": -8.42,
-          "ret_60d_pct": -19.79,
-          "vol_20d_pct": 27.94,
+          "close": 335.18,
+          "ret_1d_pct": -1.76,
+          "ret_5d_pct": -5.55,
+          "ret_20d_pct": -9.17,
+          "ret_60d_pct": -20.45,
+          "vol_20d_pct": 28.27,
           "above_ma20": false,
           "is_safe": false,
+          "lot": 1,
           "signal_tag": "弱势观察"
         },
         {
           "code": "SHY",
           "name": "1-3年美债 ETF",
           "role": "短债泊车位",
-          "close": 81.345,
-          "ret_1d_pct": 0.01,
-          "ret_5d_pct": 0.25,
-          "ret_20d_pct": 0.1,
-          "ret_60d_pct": 0.04,
-          "vol_20d_pct": 1.89,
-          "above_ma20": false,
+          "close": 81.38,
+          "ret_1d_pct": 0.05,
+          "ret_5d_pct": 0.3,
+          "ret_20d_pct": 0.14,
+          "ret_60d_pct": 0.09,
+          "vol_20d_pct": 1.9,
+          "above_ma20": true,
           "is_safe": true,
+          "lot": 1,
           "signal_tag": "避险入选"
         }
       ],
@@ -376,12 +390,12 @@
           {
             "code": "TLT",
             "name": "20年期美债 ETF",
-            "ret_20d_pct": -1.52
+            "ret_20d_pct": -1.29
           },
           {
             "code": "SCHD",
             "name": "美股红利 ETF",
-            "ret_20d_pct": -3.32
+            "ret_20d_pct": -3.39
           }
         ],
         "target_plan": [
@@ -389,9 +403,9 @@
             "code": "SHY",
             "name": "1-3年美债 ETF",
             "weight_pct": 100.0,
-            "ref_price": 81.345,
+            "ref_price": 81.38,
             "qty": 122,
-            "est_amount": 9924.1
+            "est_amount": 9928.4
           }
         ]
       }
@@ -400,11 +414,11 @@
   "ai_brief": {
     "source": "llm",
     "model": "deepseek-flash",
-    "generated_at_utc": "2026-11-19T17:24:10.219947+00:00",
+    "generated_at_utc": "2026-11-20T02:31:09.401752+00:00",
     "sentiment_score": -2,
     "regime": "防御避险",
-    "headline": "风险资产普跌，红利与国债相对抗跌",
-    "summary": "全球权益与黄金同步走弱，A股仅红利、国债位于MA20上方；美股风险资产全线低于MA20，目标组合偏向防御与短久期。",
+    "headline": "全球风险资产普跌，仅红利与短债抗跌",
+    "summary": "A股、港股、美股成长板块与黄金同步走弱，波动率明显抬升；只有红利、国债、货币类资产仍站上MA20。三地目标组合已全面转向防御，债券与高股息占比合计过半。",
     "key_metrics": [
       {
         "label": "正动量广度",
@@ -426,31 +440,41 @@
     "market_sections": [
       {
         "market": "A股市场 (CN)",
-        "status": "防御占优",
+        "status": "防御抗跌",
         "points": [
-          "红利ETF日涨0.59%、5日+1.87%，为动量Top2且站上MA20；国债ETF日跌0.02%、20日+0.14%，低波动避险入选。",
-          "沪深300日涨0.40%但5日-2.22%、20日-3.03%，仍在MA20下方；中证500 5日-6.51%、20日-8.09%。",
-          "创业板日涨0.78%但5日-10.12%、20日-14.19%，20日波动率51.37%；黄金ETF日跌2.41%、20日-8.38%。"
+          "红利ETF逆势+0.59%、5日+1.87%，是唯一入选动量Top2的品种",
+          "创业板ETF 20日-14.19%、中证500 5日-6.51%，成长与小盘全线走弱",
+          "国债ETF波动率仅0.88%并站上MA20，目标配置50%红利+50%国债"
+        ]
+      },
+      {
+        "market": "港股市场 (HK)",
+        "status": "股息独立",
+        "points": [
+          "GX恒生高股息20日+3.23%，是港股唯一正收益且站上MA20的品种",
+          "盈富基金-2.05%、恒生科技-2.57%，5日跌幅达4.8%~7.3%",
+          "价值黄金5日-4.92%，港元货币ETF波动0.69%承接避险"
         ]
       },
       {
         "market": "美股市场 (US)",
-        "status": "全线避险",
+        "status": "普跌避险",
         "points": [
-          "SPY日跌0.88%、20日-5.26%；QQQ日跌0.72%、20日-7.05%，均低于MA20。",
-          "IWM日跌1.47%、20日-3.80%；SCHD日跌1.37%、20日-3.32%，小盘与红利同步承压。",
-          "GLD日跌0.96%、20日-8.42%；SHY日涨0.01%、20日+0.10%，仅短债相对抗跌。"
+          "SPY -1.96%、5日-5.45%；QQQ -2.19%、20日-8.44%，跌幅居前",
+          "罗素2000 -2.18%，小盘与成长同步承压，风险偏好收缩",
+          "仅SHY（1-3年美债）站上MA20，目标计划100%配置短债"
         ]
       }
     ],
     "risk_alerts": [
-      "【避险失效】A股黄金ETF日跌2.41%、20日-8.38%，与美股GLD同步走弱，传统避险资产亦回撤。",
-      "【高波动回撤】创业板ETF 20日跌14.19%、波动率51.37%，中证500 20日跌8.09%，弱势中波动放大。"
+      "【高波动】创业板20日波动率51.37%、纳指100为34.34%，反弹与回撤幅度都会被放大",
+      "【避险失效】黄金ETF 518880 20日-8.38%、GLD -9.17%，传统避险品种同步下跌，需警惕流动性挤压",
+      "【时点差异】A股快照为11-18、港美股为11-19，跨市场强弱对比存在一日时滞"
     ],
     "action_notes": [
-      "按目标计划仅作示例：红利与国债各50%，不因单日反弹追高。",
-      "以MA20与20日动量作为过滤，弱势标的不急于左侧加仓。",
-      "控制单笔与总仓位，关注波动率与回撤，保留再平衡纪律。"
+      "严格按目标计划执行：红利+国债、高股息+货币各半，短债满仓，不因单日反弹临时加仓成长",
+      "以MA20作为多空分界线，未收复前维持防御仓位，不博底部反弹",
+      "把现金与短债视为波动缓冲垫，先管理回撤再谈收益，避免追涨杀跌"
     ]
   }
 }
