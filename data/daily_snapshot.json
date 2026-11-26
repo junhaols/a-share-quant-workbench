@@ -1,5 +1,5 @@
 {
-  "updated_at_utc": "2026-11-25T18:11:33.896623+00:00",
+  "updated_at_utc": "2026-11-26T03:43:01.461604+00:00",
   "markets": {
     "cn": {
       "market_id": "cn",
@@ -257,8 +257,8 @@
       "market_id": "us",
       "market_name": "美股市场 (US)",
       "currency": "$",
-      "as_of_date": "2026-11-24",
-      "trading_days_total": 2237,
+      "as_of_date": "2026-11-25",
+      "trading_days_total": 2238,
       "default_cash": 10000,
       "lot_size": 1,
       "etfs": [
@@ -266,12 +266,12 @@
           "code": "TLT",
           "name": "20年期美债 ETF",
           "role": "长久期国债",
-          "close": 81.49,
-          "ret_1d_pct": -0.24,
-          "ret_5d_pct": 2.44,
-          "ret_20d_pct": 0.25,
-          "ret_60d_pct": -0.05,
-          "vol_20d_pct": 10.91,
+          "close": 82.24,
+          "ret_1d_pct": 0.92,
+          "ret_5d_pct": 2.52,
+          "ret_20d_pct": 1.97,
+          "ret_60d_pct": 1.28,
+          "vol_20d_pct": 10.93,
           "above_ma20": true,
           "is_safe": false,
           "lot": 1,
@@ -281,27 +281,27 @@
           "code": "SCHD",
           "name": "美股红利 ETF",
           "role": "高股息防御",
-          "close": 34.89,
-          "ret_1d_pct": 1.45,
-          "ret_5d_pct": -1.19,
-          "ret_20d_pct": -0.65,
-          "ret_60d_pct": 0.8,
-          "vol_20d_pct": 18.55,
+          "close": 35.29,
+          "ret_1d_pct": 1.15,
+          "ret_5d_pct": 1.7,
+          "ret_20d_pct": 0.57,
+          "ret_60d_pct": 2.19,
+          "vol_20d_pct": 18.98,
           "above_ma20": false,
           "is_safe": false,
           "lot": 1,
-          "signal_tag": "中性震荡"
+          "signal_tag": "动量Top2入选"
         },
         {
           "code": "IWM",
           "name": "罗素2000 ETF",
           "role": "美股小盘",
-          "close": 267.14,
-          "ret_1d_pct": 0.53,
-          "ret_5d_pct": -0.71,
-          "ret_20d_pct": -4.65,
-          "ret_60d_pct": -8.88,
-          "vol_20d_pct": 30.26,
+          "close": 268.87,
+          "ret_1d_pct": 0.65,
+          "ret_5d_pct": -0.46,
+          "ret_20d_pct": -4.42,
+          "ret_60d_pct": -7.23,
+          "vol_20d_pct": 30.34,
           "above_ma20": false,
           "is_safe": false,
           "lot": 1,
@@ -311,27 +311,12 @@
           "code": "SPY",
           "name": "标普500 ETF",
           "role": "美股大盘",
-          "close": 718.78,
-          "ret_1d_pct": -0.49,
-          "ret_5d_pct": -1.86,
-          "ret_20d_pct": -6.61,
-          "ret_60d_pct": -6.06,
-          "vol_20d_pct": 30.93,
-          "above_ma20": false,
-          "is_safe": false,
-          "lot": 1,
-          "signal_tag": "弱势观察"
-        },
-        {
-          "code": "QQQ",
-          "name": "纳斯达克100 ETF",
-          "role": "美股科技",
-          "close": 638.1,
-          "ret_1d_pct": -1.99,
-          "ret_5d_pct": -2.87,
-          "ret_20d_pct": -11.53,
-          "ret_60d_pct": -10.88,
-          "vol_20d_pct": 46.67,
+          "close": 716.7,
+          "ret_1d_pct": -0.29,
+          "ret_5d_pct": -1.85,
+          "ret_20d_pct": -7.2,
+          "ret_60d_pct": -5.68,
+          "vol_20d_pct": 30.84,
           "above_ma20": false,
           "is_safe": false,
           "lot": 1,
@@ -341,12 +326,27 @@
           "code": "GLD",
           "name": "SPDR 黄金 ETF",
           "role": "大宗避险",
-          "close": 325.45,
-          "ret_1d_pct": -2.27,
-          "ret_5d_pct": -7.67,
-          "ret_20d_pct": -12.58,
-          "ret_60d_pct": -20.31,
-          "vol_20d_pct": 32.89,
+          "close": 327.45,
+          "ret_1d_pct": 0.61,
+          "ret_5d_pct": -4.03,
+          "ret_20d_pct": -12.33,
+          "ret_60d_pct": -17.47,
+          "vol_20d_pct": 33.01,
+          "above_ma20": false,
+          "is_safe": false,
+          "lot": 1,
+          "signal_tag": "弱势观察"
+        },
+        {
+          "code": "QQQ",
+          "name": "纳斯达克100 ETF",
+          "role": "美股科技",
+          "close": 633.93,
+          "ret_1d_pct": -0.65,
+          "ret_5d_pct": -3.88,
+          "ret_20d_pct": -12.63,
+          "ret_60d_pct": -10.32,
+          "vol_20d_pct": 46.48,
           "above_ma20": false,
           "is_safe": false,
           "lot": 1,
@@ -356,16 +356,16 @@
           "code": "SHY",
           "name": "1-3年美债 ETF",
           "role": "短债泊车位",
-          "close": 81.57,
-          "ret_1d_pct": 0.0,
-          "ret_5d_pct": 0.31,
-          "ret_20d_pct": 0.46,
-          "ret_60d_pct": 0.52,
-          "vol_20d_pct": 2.12,
+          "close": 81.64,
+          "ret_1d_pct": 0.09,
+          "ret_5d_pct": 0.37,
+          "ret_20d_pct": 0.52,
+          "ret_60d_pct": 0.67,
+          "vol_20d_pct": 2.13,
           "above_ma20": true,
           "is_safe": true,
           "lot": 1,
-          "signal_tag": "避险入选"
+          "signal_tag": "趋势偏强"
         }
       ],
       "momentum_signal": {
@@ -374,12 +374,12 @@
           {
             "code": "TLT",
             "name": "20年期美债 ETF",
-            "ret_20d_pct": 0.25
+            "ret_20d_pct": 1.97
           },
           {
             "code": "SCHD",
             "name": "美股红利 ETF",
-            "ret_20d_pct": -0.65
+            "ret_20d_pct": 0.57
           }
         ],
         "target_plan": [
@@ -387,17 +387,17 @@
             "code": "TLT",
             "name": "20年期美债 ETF",
             "weight_pct": 50.0,
-            "ref_price": 81.49,
-            "qty": 61,
-            "est_amount": 4970.9
+            "ref_price": 82.24,
+            "qty": 60,
+            "est_amount": 4934.4
           },
           {
-            "code": "SHY",
-            "name": "1-3年美债 ETF",
+            "code": "SCHD",
+            "name": "美股红利 ETF",
             "weight_pct": 50.0,
-            "ref_price": 81.57,
-            "qty": 61,
-            "est_amount": 4975.8
+            "ref_price": 35.29,
+            "qty": 141,
+            "est_amount": 4975.9
           }
         ]
       }
@@ -406,11 +406,11 @@
   "ai_brief": {
     "source": "llm",
     "model": "deepseek-flash",
-    "generated_at_utc": "2026-11-25T18:11:33.896575+00:00",
-    "sentiment_score": -2,
+    "generated_at_utc": "2026-11-26T03:43:01.461555+00:00",
+    "sentiment_score": -1,
     "regime": "防御避险",
-    "headline": "风险资产普跌，组合全面转向债与现金",
-    "summary": "全球多数ETF位于MA20下方，科技与黄金回撤显著；仅国债、短债与货币基金维持正动量，目标组合以避险资产为主。",
+    "headline": "风险资产全线跌破20日线，仅国债与货币基金入选避险",
+    "summary": "A股、港股、美股权益类ETF普遍处于20日均线下方，黄金同步走弱，资金集中流向国债、港元货币和美债红利，目标组合整体以防御为主。",
     "key_metrics": [
       {
         "label": "正动量广度",
@@ -432,41 +432,43 @@
     "market_sections": [
       {
         "market": "A股市场 (CN)",
-        "status": "防御为主",
+        "status": "防御收缩",
         "points": [
-          "沪深300ETF日涨0.25%但20日跌2.18%，仍在MA20下方",
-          "中证500ETF日跌0.55%、20日跌6.29%，创业板20日跌10.57%",
-          "国债ETF日涨0.03%且高于MA20，目标配置100%"
+          "国债ETF是唯一站上20日均线的品种，20日+0.17%、波动率仅0.89%，模型给出100%配置",
+          "中证500ETF 20日-6.29%、创业板ETF 20日-10.57%且波动率47.95%，小盘成长最弱",
+          "纳指ETF单日+3.95%，但5日-1.62%、20日-5.25%，属于高波动反抽，不宜追高"
         ]
       },
       {
         "market": "港股市场 (HK)",
-        "status": "弱势避险",
+        "status": "弱势下行",
         "points": [
-          "恒生科技日跌2.24%、5日跌9.45%，港股权益普遍走弱",
-          "盈富基金5日跌5.55%，价值黄金20日跌12.95%",
-          "南方港元货币20日涨0.45%且高于MA20，目标配置100%"
+          "南方恒生科技单日-2.24%、5日-9.45%，盈富基金20日-4.68%，全部弱于20日均线",
+          "价值黄金5日-6.63%、20日-12.95%，避险资产同步回撤",
+          "仅南方港元货币站上均线（20日+0.45%、波动率0.95%），模型100%配置"
         ]
       },
       {
         "market": "美股市场 (US)",
-        "status": "债强股弱",
+        "status": "股债切换",
         "points": [
-          "QQQ日跌1.99%、20日跌11.53%，SPY 20日跌6.61%",
-          "GLD 5日跌7.67%，黄金短期避险作用减弱",
-          "TLT与SHY高于MA20，目标各配50%"
+          "20年美债TLT 5日+2.52%、20日+1.97%且站上均线，是唯一趋势资产",
+          "红利SCHD 5日+1.70%；标普500 20日-7.20%、纳指100 -12.63%、波动率46.48%",
+          "模型配置为50%TLT与50%SCHD，回避科技成长"
         ]
       }
     ],
     "risk_alerts": [
-      "【趋势风险】多数权益ETF位于MA20下方，弱势反弹不宜追高",
-      "【波动风险】创业板ETF波动率47.95%、QQQ 46.67%，回撤控制优先",
-      "【黄金回撤】黄金ETF 20日跌9.5%至12.58%，避险资产同步走弱"
+      "【趋势风险】三大市场权益ETF全部位于20日均线下方，尚无右侧信号",
+      "【波动风险】创业板ETF波动率47.95%、纳指100 46.48%，单日大幅波动可能持续",
+      "【对冲失效】A股与港股黄金20日跌幅达9.5%、13.0%，传统避险标的与股票同向下跌",
+      "【时点差异】A股数据截至11-24、港美截至11-25，跨市场比较需注意时间差"
     ],
     "action_notes": [
-      "按目标计划以国债、短债与货币基金为底仓，不因单日反弹改变防御纪律",
-      "对高波动成长ETF仅观察，等待站上MA20且动量转正再评估",
-      "控制单笔仓位与总回撤，保留现金等价物应对波动"
+      "纪律一：均线下方不猜底，以模型给出的国债、货币类资产作为底仓",
+      "纪律二：单日大幅反弹（例如纳指ETF+3.95%）不等于趋势反转，需要5日、20日数据同步改善才确认",
+      "纪律三：把47%级别的波动率视为仓位约束条件，而不是买入理由，单品种仓位与波动率成反比",
+      "纪律四：跨市场时点不同，复盘时统一以as_of日期为准，避免误判同步性"
     ]
   }
 }
